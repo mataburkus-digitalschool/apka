@@ -1,0 +1,1953 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>My Garage by Autobond</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root{
+    /* electric-blue editorial · white-dominant */
+    --paper:#ffffff;
+    --canvas:#ffffff;
+    --ink:#080a14;
+    --muted:#6b7180;
+    --line:#e7e9f0;
+    --line-2:#eef0f5;
+    --chip:#f4f5f9;
+    --blue:#1a2ee6;       /* electric primary */
+    --blue-2:#3a5bff;     /* brighter (glow) */
+    --navy:#0a1550;       /* deep glow core / rare dark */
+    --navy-d:#060b2e;
+    --azure:#3a7bff;      /* secondary bright (charts) */
+    --red:#8b96ff;        /* tertiary light-blue (charts) */
+    --slate:#c2c8dc;
+    --radius:22px;
+    --shadow:0 30px 60px -38px rgba(10,21,80,.35);
+    --disp:"Bricolage Grotesque",system-ui,sans-serif;
+    --serif:"Instrument Serif",Georgia,serif;
+    --font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:var(--font);background:#e9ebf1;color:var(--ink);-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--blue);color:#fff}
+  img{display:block;max-width:100%}
+  h1,h2,h3,h4,.disp{font-family:var(--disp);letter-spacing:-.03em}
+  .ac{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--blue);letter-spacing:-.01em}
+  .label{font-family:var(--font);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+  .app{display:grid;grid-template-columns:262px 1fr;max-width:1440px;min-height:100vh;margin:0 auto;background:var(--paper)}
+
+  /* Sidebar */
+  .side{position:sticky;top:0;height:100vh;padding:26px 18px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line);background:var(--paper)}
+  .brand{display:flex;align-items:center;gap:12px;padding:6px 8px 22px}
+  .brand .logo{width:44px;height:44px;border-radius:13px;background:var(--ink);display:grid;place-items:center;color:#fff;font-family:var(--disp);font-weight:800;font-size:15px;position:relative;overflow:hidden}
+  .brand .logo::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 120% 120%,var(--blue-2),transparent 60%)}
+  .brand b{font-family:var(--disp);font-size:16px;font-weight:800;display:block;line-height:1.05}
+  .brand span{font-size:9.5px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase}
+  .brand span em{color:var(--blue);font-style:normal;font-weight:700}
+  .nav-label{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);padding:16px 12px 6px;font-weight:600}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:11px;cursor:pointer;font-size:14px;font-weight:500;color:var(--ink);transition:.16s}
+  .nav-item svg{width:19px;height:19px;stroke-width:1.7;flex:none}
+  .nav-item .badge{margin-left:auto;background:var(--chip);color:var(--muted);font-size:10.5px;font-weight:700;min-width:22px;height:20px;padding:0 6px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line)}
+  .nav-item:hover{background:var(--chip)}
+  .nav-item.active{background:var(--blue);color:#fff}
+  .nav-item.active .badge{background:rgba(255,255,255,.22);color:#fff;border-color:transparent}
+  .side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line)}
+  .side-user{display:flex;align-items:center;gap:11px;padding:8px 6px}
+  .side-user .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--blue-2),var(--navy));flex:none;display:grid;place-items:center;color:#fff;font-family:var(--disp);font-weight:700;font-size:13px}
+  .side-user b{font-size:13px;display:block;line-height:1.2}
+  .side-user span{font-size:11px;color:var(--muted)}
+
+  .main{padding:20px 34px 120px;min-width:0}
+  /* editorial strip */
+  .strip{display:flex;align-items:center;justify-content:space-between;padding:6px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .strip .l{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink);font-weight:600}
+  .strip .r{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+  .search{flex:1;display:flex;align-items:center;gap:11px;background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:12px 18px;max-width:440px;transition:.16s}
+  .search:focus-within{border-color:var(--blue)}
+  .search svg{width:18px;height:18px;color:var(--muted);stroke-width:1.9}
+  .search input{border:0;outline:0;background:none;font-family:var(--font);font-size:14px;width:100%;color:var(--ink)}
+  .icon-btn{width:46px;height:46px;border-radius:13px;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;flex:none;transition:.16s;color:var(--ink);position:relative}
+  .icon-btn svg{width:19px;height:19px;stroke-width:1.8}
+  .icon-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .icon-btn.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .icon-btn.dark:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+  .icon-btn .dotred{position:absolute;top:11px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--blue);border:2px solid var(--paper)}
+  .topbar .spacer{margin-left:auto}
+
+  h1.page{font-size:44px;font-weight:800;line-height:1;margin-bottom:8px;letter-spacing:-.04em}
+  h1.page .ac{font-size:46px}
+  .page-sub{color:var(--muted);font-size:14px;margin-bottom:26px;max-width:680px;line-height:1.5}
+
+  .view{display:none;animation:fade .35s ease}
+  .view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius)}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:11px;font-weight:600;color:#3f4657;white-space:nowrap}
+  .chip.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip.blue{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .arrow-btn{width:44px;height:44px;border-radius:12px;background:var(--ink);color:#fff;border:0;cursor:pointer;display:grid;place-items:center;flex:none;transition:.2s}
+  .arrow-btn:hover{background:var(--blue)}
+  .arrow-btn svg{width:18px;height:18px;stroke-width:2}
+
+  .grid{display:grid;gap:18px}
+  .g-2{grid-template-columns:1.35fr 1fr}
+  .g-3{grid-template-columns:repeat(3,1fr)}
+  .g-4{grid-template-columns:repeat(4,1fr)}
+
+  /* Hero — white with electric glow */
+  .hero{padding:0;overflow:hidden;position:relative;background:var(--paper)}
+  .hero .glow{position:absolute;right:-80px;top:-80px;width:340px;height:340px;border-radius:50%;
+    background:radial-gradient(circle,var(--blue-2),transparent 62%);opacity:.16;pointer-events:none;z-index:0}
+  .hero .grid-lines{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(var(--line-2) 1px,transparent 1px),linear-gradient(90deg,var(--line-2) 1px,transparent 1px);
+    background-size:52px 52px}
+  .hero-photo{position:relative;height:340px;z-index:1}
+  .hero-photo img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
+  .hero-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 48%,rgba(255,255,255,.32) 66%,rgba(255,255,255,.9) 85%,var(--paper))}
+  .hero-caption{position:absolute;left:24px;right:24px;bottom:12px;z-index:2}
+  .hero-caption h2{font-size:30px;font-weight:800;line-height:1.02;letter-spacing:-.03em;color:var(--ink)}
+  .hero-photo .over{position:absolute;left:22px;right:22px;top:20px;display:flex;justify-content:space-between;align-items:flex-start;z-index:2}
+  .hero-photo .over .label{color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.4)}
+  .hero-photo .arrow-btn{background:rgba(255,255,255,.9);color:var(--ink)}
+  .hero-photo .arrow-btn:hover{background:var(--blue);color:#fff}
+  .hero-photo .cm{position:absolute;width:14px;height:14px;z-index:2;border-color:rgba(255,255,255,.85)}
+  .cm{border:0;position:absolute}
+  .cm.tl{border-top:1.5px solid;border-left:1.5px solid;left:14px;top:14px}
+  .cm.tr{border-top:1.5px solid;border-right:1.5px solid;right:14px;top:14px}
+  .hero-body{padding:2px 24px 22px;position:relative;z-index:1}
+  .hero-body h2{font-size:28px;font-weight:800;line-height:1.02;letter-spacing:-.03em}
+  .hero .plate{display:inline-block;background:var(--paper);color:var(--ink);font-family:var(--disp);font-weight:800;font-size:13px;letter-spacing:.05em;padding:5px 12px;border-radius:8px;margin:8px 0 0;border:2px solid var(--blue)}
+  .hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .stat{background:var(--chip);border:1px solid var(--line);border-radius:13px;padding:13px}
+  .stat .k{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;font-weight:600}
+  .stat .v{font-family:var(--disp);font-size:19px;font-weight:800;color:var(--ink)}
+  .stat .v small{font-family:var(--font);font-size:12px;font-weight:500;color:var(--muted)}
+  .stat.warn{background:rgba(26,46,230,.06);border-color:rgba(26,46,230,.18)}
+  .stat.warn .v{color:var(--blue)}
+  .stat.ok .v{color:var(--blue)}
+
+  .alerts{padding:22px}
+  .alerts h3{font-size:17px;font-weight:800;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+  .alert{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);align-items:center}
+  .alert:last-child{border-bottom:0;padding-bottom:0}
+  .alert .dot{width:38px;height:38px;border-radius:10px;flex:none;display:grid;place-items:center;background:var(--chip);color:var(--ink);border:1px solid var(--line)}
+  .alert .dot svg{width:18px;height:18px;stroke-width:1.8}
+  .alert.hot .dot{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .alert.due .dot{background:rgba(26,46,230,.1);color:var(--blue);border-color:transparent}
+  .alert b{font-size:13.5px;display:block;font-family:var(--font);font-weight:700;letter-spacing:0}
+  .alert span{font-size:12px;color:var(--muted)}
+  .alert time{margin-left:auto;font-size:10.5px;color:var(--muted);white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+
+  .qa-title{display:flex;align-items:center;justify-content:space-between;margin:2px 0 14px}
+  .qa-title h3{font-size:18px;font-weight:800}
+  .qa{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .qa button{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:17px 14px;cursor:pointer;display:flex;flex-direction:column;gap:12px;align-items:flex-start;transition:.16s;text-align:left;font-family:var(--font);color:var(--ink)}
+  .qa button:hover{border-color:var(--blue);transform:translateY(-3px)}
+  .qa button:hover .qa-ic{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .qa-ic{width:42px;height:42px;border-radius:11px;background:var(--chip);color:var(--blue);border:1px solid var(--line);display:grid;place-items:center;transition:.16s}
+  .qa-ic svg{width:20px;height:20px;stroke-width:1.7}
+  .qa b{font-size:14px;font-weight:700}
+  .qa span{font-size:11.5px;color:var(--muted)}
+
+  /* Car card */
+  .car-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;transition:.2s;display:flex;flex-direction:column}
+  .car-card:hover{border-color:var(--blue);box-shadow:var(--shadow);transform:translateY(-3px)}
+  .car-card .thumb{height:162px;background:#eef0f5;position:relative;overflow:hidden}
+  .car-card .thumb img{width:100%;height:100%;object-fit:cover;transition:.4s}
+  .car-card:hover .thumb img{transform:scale(1.05)}
+  .car-card .fav{position:absolute;top:11px;right:11px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);display:grid;place-items:center;border:0;color:var(--ink);cursor:pointer;z-index:2}
+  .car-card .fav:hover{background:#fff;color:var(--blue)}
+  .car-card .fav svg{width:15px;height:15px;stroke-width:1.9}
+  .car-card .fav.on{color:var(--blue)}
+  .car-card .tag{position:absolute;top:11px;left:11px;background:var(--blue);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:6px;z-index:2}
+  .car-card .tag.ghost{background:rgba(255,255,255,.9);color:var(--ink)}
+  .car-card .body{padding:14px 15px 16px}
+  .car-card h4{font-size:13.5px;font-weight:700;font-family:var(--font);line-height:1.25;min-height:2.5em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .car-card .specs{display:flex;flex-wrap:wrap;gap:5px;margin:11px 0 12px}
+  .car-card .specs span{font-size:9.5px;color:#4d5468;background:var(--chip);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+  .car-card .priceline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .car-card .price{font-family:var(--disp);font-size:18px;font-weight:800}
+  .car-card .price small{font-family:var(--font);font-size:11px;color:var(--muted);font-weight:500}
+  .car-card .old{font-size:12px;color:var(--muted);text-decoration:line-through;font-weight:500}
+  .car-card .save{margin-top:6px;font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.02em}
+  .car-card .loyal-note{display:flex;align-items:center;gap:5px;margin-top:7px;padding-top:7px;border-top:1px dashed var(--line);font-size:9.5px;font-weight:700;color:var(--navy);line-height:1.2}
+  .car-card .loyal-note svg{width:12px;height:12px;stroke-width:1.8;flex:none;color:var(--blue)}
+
+  /* filters */
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .toolbar .count{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+  .toolbar .count b{color:var(--ink);font-family:var(--disp)}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .fchip{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.16s;color:var(--ink)}
+  .fchip:hover{border-color:var(--blue)}
+  .fchip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .fchip .c{opacity:.5;font-weight:600}
+  .fchip.active .c{opacity:.75}
+  .fchip svg{width:14px;height:14px;stroke-width:2}
+  .load-more{display:block;margin:24px auto 0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 30px;font-family:var(--font);font-size:14px;font-weight:700;color:var(--ink);cursor:pointer}
+  .load-more:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .empty{text-align:center;color:var(--muted);padding:60px 0;font-size:14px}
+
+  /* mobile.de-style filter panel */
+  .offer-layout{display:grid;grid-template-columns:250px 1fr;gap:22px;align-items:start}
+  .filter-panel{position:sticky;top:16px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:2px 18px 16px}
+  .fp-head{display:flex;align-items:center;justify-content:space-between;padding:15px 0 13px;border-bottom:1px solid var(--line)}
+  .fp-head b{font-size:14px;font-weight:800;font-family:var(--disp)}
+  .fp-head button{background:none;border:0;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)}
+  .fp-sec{padding:14px 0;border-bottom:1px solid var(--line)}
+  .fp-sec:last-child{border-bottom:0}
+  .fp-sec>label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
+  .brand-list{max-height:230px;overflow:auto;display:flex;flex-direction:column;gap:1px;margin:0 -6px}
+  .brand-list::-webkit-scrollbar{width:6px}.brand-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .ck{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:6px;border-radius:8px;user-select:none}
+  .ck:hover{background:var(--chip)}
+  .ck input{display:none}
+  .ck .box{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--slate);flex:none;display:grid;place-items:center;transition:.14s}
+  .ck .box svg{width:12px;height:12px;stroke-width:3.2;color:#fff;opacity:0}
+  .ck input:checked+.box{background:var(--blue);border-color:var(--blue)}
+  .ck input:checked+.box svg{opacity:1}
+  .ck .cnt{margin-left:auto;font-size:11px;color:var(--muted)}
+  .fp-row{display:flex;align-items:center;gap:8px}
+  .fp-row span{color:var(--muted);font-size:13px}
+  .fp-sel{width:100%;font-family:var(--font);font-size:13px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7180' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:26px}
+  .fp-sel:focus{border-color:var(--blue)}
+  .ck-row{display:flex;flex-direction:column;gap:1px;margin:0 -6px}
+  .offer-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .offer-top .count{font-size:13px;color:var(--muted);font-weight:600}
+  .offer-top .count b{color:var(--ink);font-family:var(--disp)}
+  .sort-sel{font-family:var(--font);font-size:13px;font-weight:600;padding:10px 34px 10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7180' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
+  .offer-grid{display:grid;gap:16px;grid-template-columns:repeat(3,1fr)}
+  .fp-toggle{display:none;align-items:center;gap:8px;background:var(--ink);color:#fff;border:0;border-radius:10px;padding:12px 18px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px}
+  .fp-toggle svg{width:16px;height:16px;stroke-width:2}
+  @media(max-width:1040px){.offer-layout{grid-template-columns:1fr}.filter-panel{position:static}.offer-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:760px){
+    .fp-toggle{display:inline-flex}
+    .filter-panel{display:none;margin-bottom:16px}
+    .filter-panel.open{display:block}
+    .brand-list{max-height:200px}
+    .offer-grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:440px){.offer-grid{grid-template-columns:1fr}}
+
+  /* detail */
+  .detail-hero{position:relative;overflow:hidden;border-radius:var(--radius);border:1px solid var(--line)}
+  .detail-hero img.bg{width:100%;height:380px;object-fit:cover}
+  .detail-hero .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,11,46,.35),rgba(6,11,46,.05) 42%,rgba(6,11,46,.68))}
+  .detail-hero .content{position:absolute;inset:0;padding:26px;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
+  .detail-hero h2{font-size:32px;font-weight:800;margin:4px 0 10px;letter-spacing:-.03em}
+  .detail-hero .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .detail-hero .chips .chip{background:rgba(255,255,255,.18);color:#fff;border-color:transparent;backdrop-filter:blur(6px)}
+  .side-tools{position:absolute;right:22px;top:80px;display:flex;flex-direction:column;gap:10px}
+  .side-tools button{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.2);backdrop-filter:blur(10px);border:0;display:grid;place-items:center;cursor:pointer;color:#fff;transition:.16s}
+  .side-tools button:hover{background:#fff;color:var(--ink)}
+  .side-tools button.dark{background:var(--blue)}
+  .side-tools button svg{width:18px;height:18px;stroke-width:1.8}
+
+  .tabs{display:flex;gap:8px;background:var(--chip);padding:5px;border-radius:12px;margin-bottom:18px;width:fit-content;flex-wrap:wrap;border:1px solid var(--line)}
+  .tab{padding:9px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:7px;font-family:var(--font)}
+  .tab.active{background:var(--paper);color:var(--ink);box-shadow:0 3px 10px -6px rgba(10,21,80,.3)}
+  .tab .b{background:var(--ink);color:#fff;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:7px}
+  .tab.active .b{background:var(--blue)}
+
+  .donut-card{padding:24px}
+  .donut-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+  .donut-head h3{font-size:17px;font-weight:800}
+  .eyebrow-sm{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .donut-wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+  .donut{position:relative;width:150px;height:150px;flex:none}
+  .donut .center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .donut .center b{font-family:var(--disp);font-size:19px;font-weight:800;display:block;line-height:1}
+  .donut .center span{position:absolute;left:0;right:0;bottom:30px;font-size:10px;color:var(--muted);letter-spacing:.02em}
+  .exp-list{display:flex;flex-direction:column;gap:8px;flex:1;min-width:180px}
+  .exp-row{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#42495c}
+  .exp-row i{width:9px;height:9px;border-radius:3px;flex:none}
+  .exp-row b{margin-left:auto;font-weight:700;color:var(--ink)}
+  .metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+  .metric .bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:9px}
+  .metric .bar i{display:block;height:100%;border-radius:3px}
+  .metric b{font-family:var(--disp);font-size:16px;font-weight:800}
+  .metric span{font-size:11px;color:var(--muted);display:block}
+
+  .svc-list{display:flex;flex-direction:column}
+  .svc{display:flex;align-items:center;gap:15px;padding:15px 0;border-bottom:1px solid var(--line)}
+  .svc:last-child{border-bottom:0}
+  .svc .n{width:28px;height:28px;border-radius:8px;background:var(--chip);color:var(--blue);display:grid;place-items:center;font-family:var(--disp);font-size:12px;font-weight:800;flex:none;border:1px solid var(--line)}
+  .svc>div:not(.money){flex:1;min-width:0}
+  .svc b{display:block;font-size:14px;font-weight:600}
+  .svc span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .svc .money{margin-left:auto;text-align:right;flex:none;white-space:nowrap}
+  .svc .money b{font-family:var(--disp);font-size:15px;font-weight:700;white-space:nowrap}
+
+  .doc{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--paper);cursor:pointer;transition:.16s}
+  .doc:hover{border-color:var(--blue)}
+  .doc .ic{width:44px;height:44px;border-radius:11px;background:var(--chip);color:var(--blue);display:grid;place-items:center;flex:none;border:1px solid var(--line)}
+  .doc .ic svg{width:20px;height:20px;stroke-width:1.7}
+  .doc b{font-size:14px;font-weight:600;display:block}
+  .doc span{font-size:12px;color:var(--muted)}
+  .doc .dl{margin-left:auto;color:var(--muted)}
+
+  .sec-h{display:flex;align-items:center;justify-content:space-between;margin:34px 0 16px;padding-top:20px;border-top:1px solid var(--line)}
+  .sec-h h3{font-size:20px;font-weight:800}
+  .sec-h .idx{font-family:var(--serif);font-style:italic;color:var(--blue);font-size:20px;margin-left:10px}
+  .sec-h a{font-size:12px;color:var(--blue);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+  .sec-h a:hover{color:var(--ink)}
+
+  .calc{padding:24px}
+  .calc-row{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line)}
+  .calc-row:last-child{border-bottom:0}
+  .calc-row .l{font-size:13.5px;color:var(--muted)}
+  .calc-row .r{font-family:var(--disp);font-size:20px;font-weight:800}
+  .calc-row.total{position:relative;overflow:hidden;background:var(--navy);margin:8px -24px -24px;padding:22px 24px;border-radius:0 0 var(--radius) var(--radius);color:#fff}
+  .calc-row.total::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:radial-gradient(circle,var(--blue-2),transparent 62%);opacity:.6}
+  .calc-row.total .l{color:#fff;font-weight:700;font-size:15px;position:relative}
+  .calc-row.total .r{font-size:26px;color:#fff;position:relative}
+
+  .btn-primary{background:var(--blue);color:#fff;border:0;border-radius:12px;padding:14px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:9px;transition:.16s}
+  .btn-primary:hover{background:var(--ink)}
+  .btn-primary svg{width:16px;height:16px;stroke-width:2}
+  .btn-ghost{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:14px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
+  .btn-ghost:hover{border-color:var(--blue)}
+
+  /* AI panel — signature electric-blue glow */
+  .ai{padding:28px;border-radius:var(--radius);position:relative;overflow:hidden;color:#fff;
+    background:radial-gradient(120% 130% at 82% 0%,var(--blue-2) 0%,var(--blue) 32%,var(--navy) 72%,var(--navy-d) 100%)}
+  .ai::after{content:"";position:absolute;left:-60px;bottom:-80px;width:240px;height:240px;background:radial-gradient(circle,var(--blue-2),transparent 60%);opacity:.5}
+  .ai .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.85);margin-bottom:14px;position:relative;font-weight:600}
+  .ai h3{font-size:24px;font-weight:800;margin-bottom:8px;position:relative;letter-spacing:-.02em}
+  .ai h3 .ac{color:#fff}
+  .ai p{font-size:13.5px;color:rgba(255,255,255,.8);line-height:1.5;margin-bottom:20px;position:relative;max-width:80%}
+  .ai .btn-primary{background:#fff;color:var(--navy);position:relative}
+  .ai .btn-primary:hover{background:var(--ink);color:#fff}
+
+  /* Services directory */
+  .svc-cat{display:flex;align-items:center;gap:14px;margin:28px 0 14px}
+  .svc-cat h3{font-size:14px;font-weight:800;letter-spacing:-.01em;white-space:nowrap}
+  .svc-cat .line{flex:1;height:1px;background:var(--line)}
+  .svc-cat .n{font-family:var(--serif);font-style:italic;color:var(--blue);font-size:15px}
+  .service-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .svc-tile{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:15px;cursor:pointer;transition:.16s;display:flex;flex-direction:column;gap:11px;min-height:122px}
+  .svc-tile:hover{border-color:var(--blue);transform:translateY(-3px)}
+  .svc-tile:hover .ic{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .svc-tile .ic{width:38px;height:38px;border-radius:10px;background:var(--chip);color:var(--blue);border:1px solid var(--line);display:grid;place-items:center;transition:.16s}
+  .svc-tile .ic svg{width:19px;height:19px;stroke-width:1.7}
+  .svc-tile b{font-size:13px;font-weight:700;line-height:1.25}
+  .svc-tile .t{margin-top:auto;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .svc-tile .t.sub{color:var(--blue)}
+  .svc-tile .t.one{color:var(--muted)}
+  .svc-tile .t.lead{color:var(--ink)}
+
+  /* Plans */
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .plan{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:26px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .plan .tier{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+  .plan .price{font-family:var(--disp);font-size:38px;font-weight:800;margin:14px 0 2px;letter-spacing:-.03em}
+  .plan .price small{font-family:var(--font);font-size:13px;font-weight:500;color:var(--muted)}
+  .plan .desc{font-size:12.5px;color:var(--muted);margin-bottom:18px;min-height:34px}
+  .plan ul{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:22px;flex:1}
+  .plan li{font-size:13px;display:flex;gap:10px;align-items:flex-start;line-height:1.35}
+  .plan li svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--blue)}
+  .plan .btn-primary,.plan .btn-ghost{width:100%;justify-content:center}
+  .plan.featured{color:#fff;border-color:transparent;background:radial-gradient(130% 130% at 85% 0%,var(--blue-2) 0%,var(--blue) 34%,var(--navy) 76%,var(--navy-d) 100%)}
+  .plan.featured .tier,.plan.featured .desc{color:rgba(255,255,255,.85)}
+  .plan.featured li svg{color:#fff}
+  .plan.featured .price small{color:rgba(255,255,255,.7)}
+  .plan.featured .btn-primary{background:#fff;color:var(--navy)}
+  .plan .flag{position:absolute;top:18px;right:18px;background:#fff;color:var(--navy);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:7px}
+  .plan .vs{font-size:12px;color:var(--muted);margin:-2px 0 16px;display:flex;align-items:center;gap:7px}
+  .plan .vs s{opacity:.85}
+  .plan .vs b{color:var(--blue);font-weight:800;background:rgba(26,46,230,.1);padding:2px 7px;border-radius:6px}
+  .plan.featured .vs{color:rgba(255,255,255,.75)}
+  .plan.featured .vs b{color:#fff;background:rgba(255,255,255,.2)}
+  .svc-tile .vs2{font-size:9.5px;color:var(--muted);margin-top:3px;font-weight:600}
+  .svc-tile .vs2 s{opacity:.8}
+  .svc-tile .vs2 b{color:var(--blue);font-weight:800}
+
+  /* EV */
+  .gauge{height:16px;border-radius:10px;background:var(--chip);overflow:hidden;border:1px solid var(--line)}
+  .gauge i{display:block;height:100%;border-radius:10px;background:linear-gradient(90deg,var(--navy),var(--blue),var(--blue-2))}
+  .evmap{position:relative;height:240px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#eef1f8,#e5eaf4);border:1px solid var(--line)}
+  .evmap .lines{position:absolute;inset:0;opacity:.55;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:34px 34px}
+  .evmap .road{position:absolute;background:#d6ddec;border-radius:3px}
+  .pin{position:absolute;width:26px;height:26px;border-radius:50% 50% 50% 0;background:var(--blue);transform:rotate(-45deg);box-shadow:0 8px 16px -4px rgba(26,46,230,.55);display:grid;place-items:center}
+  .pin::after{content:"";width:9px;height:9px;background:#fff;border-radius:50%}
+  .pin.me{background:var(--ink);box-shadow:0 8px 16px -4px rgba(8,10,20,.5)}
+  .ev-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+  .ev-stat{background:var(--chip);border:1px solid var(--line);border-radius:13px;padding:14px}
+  .ev-stat .k{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .ev-stat .v{font-family:var(--disp);font-size:20px;font-weight:800}
+
+  /* Timeline */
+  .timeline{margin-top:2px}
+  .tl-item{display:flex;gap:16px;position:relative;padding-bottom:24px}
+  .tl-item::before{content:"";position:absolute;left:20px;top:46px;bottom:-2px;width:2px;background:var(--line)}
+  .tl-item:last-child{padding-bottom:0}
+  .tl-item:last-child::before{display:none}
+  .tl-dot{width:42px;height:42px;border-radius:12px;background:var(--chip);border:1px solid var(--line);color:var(--blue);display:grid;place-items:center;flex:none;z-index:1}
+  .tl-dot svg{width:19px;height:19px;stroke-width:1.7}
+  .tl-dot.buy{background:var(--blue);border-color:var(--blue);color:#fff}
+  .tl-body{flex:1;min-width:0;padding-top:3px;display:flex;gap:12px;align-items:flex-start}
+  .tl-main{flex:1;min-width:0}
+  .tl-body .d{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  .tl-body b{display:block;font-size:15px;margin:2px 0;font-weight:700}
+  .tl-body p{font-size:12.5px;color:var(--muted);margin:0}
+  .tl-cost{font-family:var(--disp);font-weight:700;font-size:14px;white-space:nowrap}
+  .tl-cost.free{color:var(--blue)}
+
+  /* Product cards */
+  .prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .prod{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;transition:.16s}
+  .prod:hover{border-color:var(--blue);transform:translateY(-3px)}
+  .prod .ic{width:44px;height:44px;border-radius:12px;background:var(--chip);border:1px solid var(--line);color:var(--blue);display:grid;place-items:center;margin-bottom:14px}
+  .prod .ic svg{width:21px;height:21px;stroke-width:1.7}
+  .prod .st{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
+  .prod .st i{width:7px;height:7px;border-radius:50%;background:var(--blue)}
+  .prod .st.off{color:var(--muted)}.prod .st.off i{background:var(--slate)}
+  .prod h4{font-size:16px;font-weight:800;font-family:var(--disp);margin-bottom:6px}
+  .prod p{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:16px;flex:1}
+  .prod .pr{font-family:var(--disp);font-size:16px;font-weight:800;margin-bottom:14px}
+  .prod .pr small{font-family:var(--font);font-size:12px;color:var(--muted);font-weight:500}
+
+  /* Booking */
+  .book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+  .slot{border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;transition:.14s;background:var(--paper)}
+  .slot small{display:block;font-size:10px;color:var(--muted);font-weight:500;margin-top:2px}
+  .slot:hover{border-color:var(--blue)}
+  .slot.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .slot.sel small{color:rgba(255,255,255,.8)}
+  .book-lbl{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:18px 0 10px}
+  .book-total{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .book-total .t{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .book-total .p{font-family:var(--disp);font-size:26px;font-weight:800}
+  @media(max-width:1040px){.prod-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:760px){.prod-grid{grid-template-columns:1fr}.tl-body{flex-direction:column;gap:3px}}
+
+  /* ---- Car detail (mobile.de styl) ---- */
+  .cd-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .cd-top .label{display:block;margin-bottom:9px}
+  .cd-top h2{font-size:30px;font-weight:800;line-height:1.14;letter-spacing:-.03em;margin:0}
+  .cd-top .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .cd-layout{display:grid;grid-template-columns:1.55fr .95fr;gap:22px;align-items:start}
+  .cd-gallery{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:#eef0f5}
+  .cd-gallery .main{width:100%;height:420px;object-fit:cover;display:block}
+  .cd-gallery .tag{position:absolute;top:16px;left:16px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:7px 12px;border-radius:8px}
+  .cd-gallery .cnt{position:absolute;bottom:16px;right:16px;background:rgba(8,10,20,.72);color:#fff;font-size:11px;font-weight:600;padding:6px 11px;border-radius:8px;backdrop-filter:blur(6px)}
+  .cd-fav{position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:0;display:grid;place-items:center;cursor:pointer;color:var(--ink);z-index:2;transition:.15s}
+  .cd-fav:hover{background:#fff;color:var(--blue)}
+  .cd-fav.on{color:var(--blue)}
+  .cd-fav svg{width:20px;height:20px;stroke-width:1.9}
+  /* člen/věrnostní sleva badge */
+  .memberdeal{display:flex;align-items:center;gap:8px;margin-top:9px;padding:8px 11px;border-radius:9px;background:rgba(26,46,230,.07);border:1px solid rgba(26,46,230,.2);font-size:11px;font-weight:700;color:var(--blue);line-height:1.25}
+  .memberdeal svg{width:14px;height:14px;stroke-width:2;flex:none}
+  .car-card .tag.loyal{top:auto;bottom:11px;left:11px;background:var(--navy)}
+  .cd-thumbs{display:flex;gap:9px;margin-top:11px;flex-wrap:wrap}
+  .cd-thumbs img{width:92px;height:66px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:pointer;transition:.14s}
+  .cd-thumbs img:hover{transform:translateY(-2px)}
+  .cd-thumbs img.sel{border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,46,230,.25)}
+  .cd-side{position:sticky;top:16px;display:flex;flex-direction:column;gap:16px}
+  .cd-pricebox{padding:22px}
+  .cd-pricebox .old{font-size:14px;color:var(--muted);text-decoration:line-through;font-weight:500}
+  .cd-pricebox .price{font-family:var(--disp);font-size:36px;font-weight:800;letter-spacing:-.03em;line-height:1}
+  .cd-pricebox .fin{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .cd-pricebox .fin b{color:var(--blue);font-family:var(--disp)}
+  .cd-cta{display:flex;flex-direction:column;gap:9px;margin-top:18px}
+  .cd-cta .btn-primary,.cd-cta .btn-ghost{width:100%;justify-content:center}
+  .dealer{display:flex;align-items:center;gap:12px;padding:16px 0 4px;margin-top:16px;border-top:1px solid var(--line)}
+  .dealer .av{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--blue-2),var(--navy));color:#fff;display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:14px;flex:none}
+  .dealer b{font-size:14px;display:block;line-height:1.2}
+  .dealer span{font-size:12px;color:var(--muted)}
+  .spec-list{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+  .spec-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .spec-item .k{color:var(--muted)}
+  .spec-item .v{font-weight:700;text-align:right}
+  @media(max-width:900px){.cd-layout{grid-template-columns:1fr}.cd-side{position:static}.cd-gallery .main{height:300px}.spec-list{grid-template-columns:1fr}}
+
+  /* ---- Stav vozu (garáž) + best flag ---- */
+  .status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .status-card{padding:20px;position:relative}
+  .status-card .top{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+  .status-card .ic{width:40px;height:40px;border-radius:11px;background:var(--chip);color:var(--blue);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .status-card .ic svg{width:20px;height:20px;stroke-width:1.8}
+  .status-card .eyebrow-sm{font-weight:700}
+  .status-card .big{font-family:var(--disp);font-size:26px;font-weight:800;letter-spacing:-.02em}
+  .status-card .big small{font-family:var(--font);font-size:13px;font-weight:500;color:var(--muted)}
+  .status-card .sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .status-card.warn .ic{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .status-card .pbar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:13px}
+  .status-card .pbar i{display:block;height:100%;border-radius:4px;background:var(--blue)}
+  .ins-flag{position:absolute;top:16px;right:16px;background:var(--blue);color:#fff;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:5px 10px;border-radius:7px}
+  .prod.best{border-color:var(--blue);box-shadow:0 20px 45px -30px rgba(26,46,230,.6)}
+  @media(max-width:900px){.status-grid{grid-template-columns:1fr}}
+
+  /* ---- Výkup tabulka ---- */
+  .vtable{width:100%;border-collapse:collapse}
+  .vtable td{padding:12px 0;border-bottom:1px solid var(--line);font-size:13.5px;color:#42495c;vertical-align:middle}
+  .vtable td:last-child{text-align:right;font-weight:700;color:var(--ink);font-family:var(--disp);white-space:nowrap}
+  .vtable td .mut{font-size:11.5px;color:var(--muted);display:block;margin-top:2px;font-weight:400}
+  .vtable tr:last-child td{border-bottom:0}
+  .vtable tr.plus td:last-child{color:var(--blue)}
+  .vtable tr.sum td{border-top:2px solid var(--ink);border-bottom:0;padding-top:15px;font-size:15px;color:var(--ink);font-weight:700}
+  .vtable tr.sum td:last-child{font-size:22px}
+  .buy-hero{position:relative;height:260px}
+  .buy-hero img{width:100%;height:100%;object-fit:cover}
+  .buy-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(6,11,46,.72))}
+  .buy-hero .badge-new{position:absolute;top:16px;left:16px;background:var(--blue);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 11px;border-radius:8px;z-index:2}
+  .buy-hero .over{position:absolute;left:20px;right:20px;bottom:16px;color:#fff;z-index:2}
+  .buy-hero .over .disp{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.05}
+  .finvars{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .finvar{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;transition:.14s}
+  .finvar:hover{border-color:var(--blue)}
+  .finvar.sel{border-color:var(--blue);background:rgba(26,46,230,.05)}
+  .finvar .lab{font-size:13px;font-weight:600}
+  .finvar .lab small{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+  .finvar .amt{margin-left:auto;font-family:var(--disp);font-size:17px;font-weight:800}
+  .finvar .amt small{font-family:var(--font);font-size:11px;color:var(--muted);font-weight:500}
+
+  /* ---- Focení vozu pro výkup ---- */
+  .photo-instr{background:rgba(26,46,230,.05);border:1px solid rgba(26,46,230,.16);border-radius:14px;padding:16px 18px;margin-bottom:18px}
+  .photo-instr b{font-size:13px;font-weight:800;display:block;margin-bottom:10px}
+  .photo-instr ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+  .photo-instr li{font-size:12.5px;color:#42495c;display:flex;gap:8px;line-height:1.35}
+  .photo-instr li svg{width:15px;height:15px;stroke-width:2;color:var(--blue);flex:none;margin-top:1px}
+  .shoot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .shoot-tile{position:relative;aspect-ratio:4/3;border:1.5px dashed var(--slate);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;cursor:pointer;background:var(--chip);overflow:hidden;transition:.15s;text-align:center;padding:12px;margin:0}
+  .shoot-tile:hover{border-color:var(--blue);background:rgba(26,46,230,.05)}
+  .shoot-tile .cic svg{width:38px;height:30px;color:var(--blue)}
+  .shoot-tile b{font-size:11.5px;font-weight:700;color:var(--ink);line-height:1.2}
+  .shoot-tile img.prev{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+  .shoot-tile.filled{border-style:solid;border-color:var(--blue)}
+  .shoot-tile .badge-ok{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;display:none;place-items:center;z-index:2;box-shadow:0 2px 8px rgba(26,46,230,.5)}
+  .shoot-tile.filled .badge-ok{display:grid}
+  .shoot-tile .lab-ovl{position:absolute;left:0;right:0;bottom:0;z-index:2;background:linear-gradient(0deg,rgba(6,11,46,.82),transparent);color:#fff;font-size:10.5px;font-weight:700;padding:16px 8px 7px;display:none}
+  .shoot-tile.filled .lab-ovl{display:block}
+  .pending{width:56px;height:56px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--blue);margin:0 auto 18px;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:600px){.shoot-grid{grid-template-columns:repeat(2,1fr)}.photo-instr ul{grid-template-columns:1fr}}
+
+  /* ---- Historie vozidel (řádky pod sebou) ---- */
+  .owned-list{display:flex;flex-direction:column;gap:12px}
+  .owned-row{display:flex;gap:16px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--paper);cursor:pointer;transition:.16s}
+  .owned-row:hover{border-color:var(--blue);box-shadow:var(--shadow);transform:translateY(-2px)}
+  .owned-row>img{width:132px;height:88px;object-fit:cover;border-radius:11px;flex:none}
+  .owned-row .info{flex:1;min-width:0}
+  .owned-row .info b{font-size:15.5px;font-weight:700;display:block}
+  .owned-row .specs2{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .owned-row .r{text-align:right;flex:none}
+  @media(max-width:640px){.owned-row{flex-wrap:wrap}.owned-row>img{width:100%;height:150px}.owned-row .r{text-align:left;width:100%;display:flex;align-items:center;justify-content:space-between}}
+
+  /* ---- Swipe taby (jedna řádka + fade okraje) ---- */
+  .swipe-wrap{position:relative;margin-bottom:14px}
+  .swipe-wrap::before,.swipe-wrap::after{content:"";position:absolute;top:0;bottom:0;width:40px;z-index:2;pointer-events:none}
+  .swipe-wrap::before{left:0;background:linear-gradient(90deg,var(--paper),rgba(255,255,255,0))}
+  .swipe-wrap::after{right:0;background:linear-gradient(270deg,var(--paper),rgba(255,255,255,0))}
+  .filters.swipe{flex-wrap:nowrap;overflow-x:auto;padding:2px 36px 8px 6px;margin-bottom:0;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .filters.swipe::-webkit-scrollbar{height:0;display:none}
+  .filters.swipe .fchip{flex:none}
+
+  /* ---- Piny na mapě nabíječek ---- */
+  .mappin{width:28px;height:28px;border-radius:50% 50% 50% 0;background:var(--blue);transform:rotate(-45deg);box-shadow:0 6px 14px -4px rgba(26,46,230,.6);display:grid;place-items:center}
+  .mappin svg{transform:rotate(45deg)}
+  .mappin.me{width:20px;height:20px;border-radius:50%;background:var(--navy);transform:none;border:3px solid #fff;box-shadow:0 0 0 4px rgba(26,46,230,.25)}
+  .leaflet-container{font-family:var(--font);background:#eef2fb}
+  /* naše identita — bílá mapa s jemným modrým nádechem */
+  #ev-map .leaflet-tile-pane{filter:grayscale(.1) sepia(.35) hue-rotate(178deg) saturate(1.25) brightness(1.04)}
+  .leaflet-bar a{color:var(--ink)!important;border-color:var(--line)!important;background:var(--paper)!important}
+  .leaflet-bar a:hover{background:var(--chip)!important;color:var(--blue)!important}
+  .leaflet-popup-content-wrapper{border-radius:12px;font-family:var(--font);box-shadow:var(--shadow)}
+  .leaflet-popup-content{margin:12px 14px;font-size:13px}
+
+  /* ---- Popovery (zvonek / účet) ---- */
+  .pop{position:fixed;top:78px;right:34px;width:326px;max-width:calc(100vw - 32px);background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);z-index:60;overflow:hidden;display:none}
+  .pop.open{display:block;animation:fade .2s ease}
+  .pop .ph{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:800;font-size:14px;display:flex;justify-content:space-between;align-items:center;font-family:var(--disp)}
+  .pop .pi{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid var(--line-2);align-items:center;cursor:pointer}
+  .pop .pi:last-child{border-bottom:0}
+  .pop .pi:hover{background:var(--chip)}
+  .pop-menu a{display:flex;gap:11px;padding:12px 16px;font-size:13.5px;font-weight:500;cursor:pointer;align-items:center;color:var(--ink);border-bottom:1px solid var(--line-2)}
+  .pop-menu a:hover{background:var(--chip)}
+
+  /* ---- Checkout modal (výběr plánu) ---- */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(6,11,46,.55);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-backdrop.open{display:flex;animation:fade .2s ease}
+  .modal{background:var(--paper);border-radius:22px;width:100%;max-width:520px;max-height:92vh;overflow:auto;position:relative;box-shadow:0 40px 90px -30px rgba(6,11,46,.6)}
+  .modal-x{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--paper);cursor:pointer;font-size:14px;color:var(--muted);z-index:2}
+  .modal-x:hover{border-color:var(--blue);color:var(--blue)}
+  .stepper{display:flex;gap:8px;padding:22px 24px 0}
+  .stepper .st{flex:1;text-align:center;font-size:11px;font-weight:700;color:var(--muted);padding-bottom:11px;border-bottom:2px solid var(--line);letter-spacing:.02em}
+  .stepper .st.active{color:var(--blue);border-color:var(--blue)}
+  .stepper .st.done{color:var(--ink);border-color:var(--blue)}
+  .modal-body{padding:22px 24px 26px}
+  .modal-body .feat{font-size:13px;display:flex;gap:9px;align-items:flex-start;padding:5px 0;color:#42495c}
+  .modal-body .feat svg{width:15px;height:15px;color:var(--blue);flex:none;margin-top:2px;stroke-width:2.4}
+  .cycle{display:flex;gap:8px;margin:16px 0 4px}
+  .cycle .c{flex:1;border:1px solid var(--line);border-radius:12px;padding:13px;cursor:pointer;text-align:center;transition:.14s}
+  .cycle .c:hover{border-color:var(--blue)}
+  .cycle .c.sel{border-color:var(--blue);background:rgba(26,46,230,.05)}
+  .cycle .c b{font-size:14px;display:block}
+  .cycle .c span{font-size:11px;color:var(--muted)}
+  .pay-methods{display:flex;gap:8px;margin-bottom:16px}
+  .pay-m{flex:1;border:1px solid var(--line);border-radius:12px;padding:13px 8px;text-align:center;font-size:12.5px;font-weight:600;cursor:pointer;transition:.14s}
+  .pay-m:hover{border-color:var(--blue)}
+  .pay-m.sel{border-color:var(--blue);background:rgba(26,46,230,.05);color:var(--blue)}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .field input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:11px;font-family:var(--font);font-size:14px;outline:none;color:var(--ink);background:var(--paper)}
+  .field input:focus{border-color:var(--blue)}
+  .frow{display:flex;gap:10px}.frow .field{flex:1}
+  .member-card{background:radial-gradient(130% 130% at 85% 0%,var(--blue-2),var(--blue) 42%,var(--navy) 100%);color:#fff;border-radius:16px;padding:20px;margin:2px 0 16px;position:relative;overflow:hidden}
+  .member-card::after{content:"";position:absolute;right:-30px;bottom:-40px;width:150px;height:150px;background:radial-gradient(circle,var(--blue-2),transparent 60%);opacity:.5}
+
+  .mtop{display:none}
+  .bottom-nav{display:none}
+
+  @media(max-width:1040px){
+    .app{grid-template-columns:1fr}
+    .side{display:none}
+    .g-2,.g-3{grid-template-columns:1fr}
+    .g-4{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:760px){
+    .main{padding:0 16px 100px}
+    .mtop{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;position:sticky;top:0;background:var(--paper);z-index:40}
+    .mtop .brand{padding:0}
+    .strip{display:none}
+    h1.page{font-size:32px}h1.page .ac{font-size:34px}
+    .hero-stats{grid-template-columns:1fr 1fr}
+    .qa{grid-template-columns:1fr 1fr}
+    .g-4{grid-template-columns:1fr 1fr}
+    .search{max-width:none}
+    .topbar{flex-wrap:wrap}
+    .ai p{max-width:100%}
+    .metric-row{grid-template-columns:1fr 1fr}
+    .detail-hero img.bg{height:300px}
+    .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:10px 8px calc(10px + env(safe-area-inset-bottom));justify-content:space-around}
+    .bn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 12px;border-radius:12px;color:var(--muted);cursor:pointer}
+    .bn svg{width:22px;height:22px;stroke-width:1.8}
+    .bn span{font-size:10px;font-weight:600}
+    .bn.active{color:var(--blue)}
+  }
+  @media(max-width:440px){.hero-stats{grid-template-columns:1fr 1fr}.qa{grid-template-columns:1fr}.g-4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <div class="brand"><div class="logo">MG</div><div><b>My Garage</b><span>by <em>Autobond</em></span></div></div>
+    <div class="nav-label">Přehled</div>
+    <div class="nav-item active" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Domů</div>
+    <div class="nav-item" data-go="garage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13v6h-2v-2H7v2H5z"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>Moje auta</div>
+    <div class="nav-item" data-go="offer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>Nabídka vozů<span class="badge" id="nav-count">600</span></div>
+    <div class="nav-item" data-go="favorites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg>Oblíbené<span class="badge" data-favbadge>0</span></div>
+    <div class="nav-label">Služby &amp; výhody</div>
+    <div class="nav-item" data-go="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Služby</div>
+    <div class="nav-item" data-go="garageplus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg>Garage+<span class="badge" style="background:var(--blue);color:#fff;border-color:transparent">PRO</span></div>
+    <div class="nav-item" data-go="ev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>EV &amp; nabíjení</div>
+    <div class="nav-label">Vůz &amp; servis</div>
+    <div class="nav-item" data-go="service"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg>Servis</div>
+    <div class="nav-item" data-go="insurance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg>Pojištění</div>
+    <div class="nav-item" data-go="docs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Dokumenty</div>
+    <div class="nav-item" data-go="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>Historie vozu</div>
+    <div class="nav-item" data-go="tradein"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Výkup &amp; protiúčet</div>
+    <div class="side-foot"><div class="side-user"><div class="av">MN</div><div><b>Matěj Novák</b><span>Zlatý člen · 2 480 b</span></div></div></div>
+  </aside>
+
+  <main class="main">
+    <div class="mtop">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="icon-btn backbtn" style="display:none" aria-label="Zpět"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 5l-7 7 7 7"/></svg></div>
+        <div class="brand"><div class="logo">MG</div><div><b>My Garage</b><span>by <em>Autobond</em></span></div></div>
+      </div>
+      <div class="icon-btn"><span class="dotred"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div></div>
+
+    <div class="strip"><div class="l">MY GARAGE — AUTOBOND</div><div class="r">DIGITÁLNÍ GARÁŽ · [ 2026 ]</div></div>
+
+    <div class="topbar">
+      <div class="icon-btn backbtn" style="display:none" aria-label="Zpět"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 5l-7 7 7 7"/></svg></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><input id="global-search" placeholder="Hledat vůz, značku, model…" /></div>
+      <div class="spacer"></div>
+      <div class="icon-btn" data-go="favorites" title="Oblíbené"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg></div>
+      <div class="icon-btn" id="btn-bell" title="Upozornění"><span class="dotred"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+      <div class="icon-btn dark" id="btn-user" title="Účet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+    </div>
+
+    <!-- Popover: upozornění -->
+    <div class="pop" id="pop-bell">
+      <div class="ph">Upozornění <span class="chip blue">3 nové</span></div>
+      <div class="pi" data-go="service"><div class="dot" style="width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;background:rgba(26,46,230,.1);color:var(--blue)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><div><b style="font-size:13px;display:block">Blíží se servis</b><span style="font-size:12px;color:var(--muted)">Doporučeno do 1 360 km · za ~3 týdny</span></div></div>
+      <div class="pi" data-go="garage"><div class="dot" style="width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;background:var(--blue);color:#fff"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div><div><b style="font-size:13px;display:block">Pojištění brzy vyprší</b><span style="font-size:12px;color:var(--muted)">Havarijní · zbývají 3 měsíce</span></div></div>
+      <div class="pi" data-go="offer"><div class="dot" style="width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;background:var(--chip);color:var(--ink)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg></div><div><b style="font-size:13px;display:block">Sledovaný vůz zlevnil</b><span style="font-size:12px;color:var(--muted)">Toyota Corolla HEV · dnes</span></div></div>
+    </div>
+
+    <!-- Popover: účet -->
+    <div class="pop pop-menu" id="pop-user">
+      <div class="ph" style="gap:11px"><div class="av" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--blue-2),var(--navy));color:#fff;display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:13px">MN</div><div><b style="display:block;font-size:14px">Matěj Novák</b><span style="font-size:11px;color:var(--muted);font-weight:500">Zlatý člen · 2 480 b</span></div></div>
+      <a data-go="garage"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13v6h-2v-2H7v2H5z"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>Moje auta</a>
+      <a data-go="docs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>Dokumenty</a>
+      <a data-go="garageplus"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg>Garage+ členství</a>
+      <a style="color:var(--muted);border-bottom:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Odhlásit se</a>
+    </div>
+
+    <!-- HOME -->
+    <section class="view on" id="v-home">
+      <h1 class="page">Dobrý den, <span class="ac">Matěji.</span></h1>
+      <p class="page-sub">Vaše digitální garáž Autobond je připravena. Vše o vašem voze — servis, dokumenty i nová nabídka — na jednom místě.</p>
+      <div class="grid g-2">
+        <div class="card hero">
+          <div class="glow"></div><div class="grid-lines"></div>
+          <div class="hero-photo"><img src="images/toyota-c-hr-1-8-hev-limited-edition.jpeg" alt="Toyota C-HR" />
+            <span class="cm tl"></span><span class="cm tr"></span>
+            <div class="over"><div class="label">01 — Aktuální vůz</div><button class="arrow-btn" data-go="garage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17 17 7M7 7h10v10"/></svg></button></div>
+            <div class="hero-caption"><h2>Toyota C-HR <span class="ac">1.8 HEV</span></h2><div class="plate">4AB 7721</div></div>
+          </div>
+          <div class="hero-body">
+            <div class="hero-stats">
+              <div class="stat"><div class="k">Nájezd</div><div class="v">28 640 <small>km</small></div></div>
+              <div class="stat ok"><div class="k">STK do</div><div class="v">05/2028</div></div>
+              <div class="stat warn"><div class="k">Servis za</div><div class="v">1 360 <small>km</small></div></div>
+              <div class="stat"><div class="k">Odhad výkupu</div><div class="v">565 <small>tis.</small></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card alerts">
+          <h3>Upozornění <div class="chip blue">3 nové</div></h3>
+          <div class="alert due"><div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><div><b>Blíží se pravidelný servis</b><span>Doporučeno do 1 360 km</span></div><time>za 3 týdny</time></div>
+          <div class="alert hot"><div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg></div><div><b>Sledovaný vůz zlevnil</b><span id="alert-car">Toyota Corolla HEV</span></div><time>dnes</time></div>
+          <div class="alert"><div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div><div><b>Pojištění je aktivní</b><span>Havarijní + povinné ručení</span></div><time>OK</time></div>
+          <div class="alert"><div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></div><div><b>Nová faktura v archivu</b><span>Servisní prohlídka · 3 480 Kč</span></div><time>12.7.</time></div>
+        </div>
+      </div>
+
+      <div class="qa-title" style="margin-top:26px"><h3>Rychlé akce</h3></div>
+      <div class="qa">
+        <button data-go="service"><div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><b>Objednat servis</b><span>Volný termín už zítra</span></button>
+        <button data-go="tradein"><div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg></div><b>Výkup vozu</b><span>Údaje předvyplněné</span></button>
+        <button data-go="docs"><div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></div><b>Dokumenty</b><span>Smlouvy, faktury, STK</span></button>
+        <button data-go="insurance"><div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div><b>Pojištění</b><span>Prodloužit / nová nabídka</span></button>
+        <button data-go="history"><div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></div><b>Historie vozu</b><span>Kompletní časová osa</span></button>
+        <button data-go="offer"><div class="qa-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg></div><b>Nabídka vozů</b><span id="qa-count">600 vozů skladem</span></button>
+      </div>
+
+      <div class="grid g-2" style="margin-top:20px">
+        <div class="ai"><div class="k">AI asistent</div><h3>Platit méně za auto <span class="ac">je umění.</span></h3><p>Zeptejte se na kontrolku na palubce, doporučení servisu nebo výběr nového vozu podle vaší historie a preferencí.</p><button class="btn-primary">Spustit asistenta <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button></div>
+        <div class="card" style="padding:22px"><div class="qa-title" style="margin:0 0 14px"><h3 style="font-size:16px">Doporučeno pro vás</h3><div class="chip">dle Toyota C-HR</div></div><div id="reco-list"></div></div>
+      </div>
+
+      <div class="sec-h"><h3>Akční vozy skladem <span class="idx">(akce)</span></h3><a data-go="offer">Zobrazit vše →</a></div>
+      <div class="grid g-4" id="home-cars"></div>
+    </section>
+
+    <!-- GARAGE -->
+    <section class="view" id="v-garage">
+      <h1 class="page">Moje <span class="ac">auta</span></h1>
+      <p class="page-sub">Váš aktuální vůz i kompletní historie vozidel zakoupených v Autobondu.</p>
+      <div class="detail-hero">
+        <img class="bg" src="images/toyota-c-hr-1-8-hev-limited-edition.jpeg" alt="Toyota C-HR" />
+        <div class="veil"></div>
+        <div class="content">
+          <div><div class="label" style="color:rgba(255,255,255,.85)">Aktuální vůz · VIN JTN••••••L2</div><h2>Toyota C-HR 1.8 HEV</h2>
+            <div class="chips"><div class="chip">Limited Edition</div><div class="chip">2026</div><div class="chip">Hybrid</div><div class="chip">CVT</div><div class="chip">103 kW</div></div></div>
+          <div class="chips"><div class="chip" style="background:#fff;color:var(--ink)">4AB 7721</div></div>
+        </div>
+        <div class="side-tools">
+          <button class="dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg></button>
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></button>
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/></svg></button>
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></button>
+        </div>
+      </div>
+      <div class="tabs" style="margin-top:22px"><div class="tab active" data-tab="costs">Náklady <span class="b">4</span></div><div class="tab" data-tab="service">Servis <span class="b">14</span></div><div class="tab" data-tab="stk">STK &amp; pojištění</div></div>
+      <div class="tabpanel" data-panel="costs">
+      <div class="grid g-2">
+        <div class="card donut-card">
+          <div class="donut-head"><div><div class="eyebrow-sm">#133-026 · servisní kniha</div><h3 style="margin-top:4px">Předpokládané náklady</h3></div><button class="arrow-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17 17 7M7 7h10v10"/></svg></button></div>
+          <div class="donut-wrap"><div class="donut" id="donut"></div>
+            <div class="exp-list">
+              <div class="exp-row"><i style="background:var(--navy)"></i>Výměna oleje &amp; filtrů <b>3 480 Kč</b></div>
+              <div class="exp-row"><i style="background:var(--blue)"></i>Brzdové destičky <b>5 200 Kč</b></div>
+              <div class="exp-row"><i style="background:var(--azure)"></i>Přezutí + geometrie <b>2 400 Kč</b></div>
+              <div class="exp-row"><i style="background:var(--slate)"></i>Aktualizace navigace <b>990 Kč</b></div>
+            </div>
+          </div>
+          <div class="metric-row">
+            <div class="metric"><div class="bar"><i style="width:39%;background:var(--navy)"></i></div><b>39%</b><span>Vyměněno</span></div>
+            <div class="metric"><div class="bar"><i style="width:41%;background:var(--blue)"></i></div><b>41%</b><span>Opotřebení</span></div>
+            <div class="metric"><div class="bar"><i style="width:20%;background:var(--azure)"></i></div><b>20%</b><span>Originál</span></div>
+          </div>
+        </div>
+        <div class="card" style="padding:24px">
+          <div class="donut-head"><h3 style="font-size:17px">Provedené servisy</h3><div class="chip">2026</div></div>
+          <div class="svc-list">
+            <div class="svc"><div class="n">01</div><div><b>Servisní prohlídka 30 000</b><span>02.06.2026 · 28 400 km · Toyota Ostrava</span></div><div class="money"><b>3 480 Kč</b></div></div>
+            <div class="svc"><div class="n">02</div><div><b>Přezutí zimní → letní</b><span>04.04.2026 · pneuservis</span></div><div class="money"><b>1 100 Kč</b></div></div>
+            <div class="svc"><div class="n">03</div><div><b>Výměna kabinového filtru</b><span>18.02.2026 · 24 100 km</span></div><div class="money"><b>690 Kč</b></div></div>
+            <div class="svc"><div class="n">04</div><div><b>Aktualizace navigace</b><span>11.01.2026 · MyToyota</span></div><div class="money"><b>0 Kč</b></div></div>
+          </div>
+        </div>
+      </div>
+      </div><!-- /panel costs -->
+
+      <div class="tabpanel" data-panel="service" style="display:none">
+        <div class="card" style="padding:24px">
+          <div class="donut-head"><h3 style="font-size:17px">Digitální servisní knížka</h3><div class="chip dark">14 záznamů</div></div>
+          <div class="svc-list">
+            <div class="svc"><div class="n">01</div><div><b>Servisní prohlídka 30 000</b><span>02.06.2026 · 28 400 km · Toyota Ostrava</span></div><div class="money"><b>3 480 Kč</b></div></div>
+            <div class="svc"><div class="n">02</div><div><b>Přezutí zimní → letní</b><span>04.04.2026 · pneuservis</span></div><div class="money"><b>1 100 Kč</b></div></div>
+            <div class="svc"><div class="n">03</div><div><b>Výměna kabinového filtru</b><span>18.02.2026 · 24 100 km</span></div><div class="money"><b>690 Kč</b></div></div>
+            <div class="svc"><div class="n">04</div><div><b>Servisní prohlídka 15 000</b><span>20.06.2025 · 14 900 km</span></div><div class="money"><b>2 980 Kč</b></div></div>
+            <div class="svc"><div class="n">05</div><div><b>Výměna brzdových destiček</b><span>10.01.2025 · 24 100 km · přední náprava</span></div><div class="money"><b>4 200 Kč</b></div></div>
+          </div>
+          <button class="btn-primary" style="margin-top:18px" data-go="service">Objednat další servis <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+      </div><!-- /panel service -->
+
+      <div class="tabpanel" data-panel="stk" style="display:none">
+      <!-- Stav vozu: STK / servis / pneu -->
+      <div class="sec-h" style="margin-top:0;border-top:0;padding-top:0"><h3>Stav vozu <span class="idx">(termíny &amp; údržba)</span></h3></div>
+      <div class="status-grid">
+        <div class="card status-card">
+          <div class="top"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div><div class="eyebrow-sm">Technická (STK &amp; emise)</div></div>
+          <div class="big">05 / 2028</div>
+          <div class="sub">Platnost ještě <b style="color:var(--ink)">22 měsíců</b> · v pořádku</div>
+          <div class="pbar"><i style="width:76%"></i></div>
+        </div>
+        <div class="card status-card warn">
+          <div class="ins-flag">Blíží se</div>
+          <div class="top"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><div class="eyebrow-sm">Do pravidelného servisu</div></div>
+          <div class="big">1 360 <small>km</small></div>
+          <div class="sub">Prohlídka 30 000 km · odhad za ~3 týdny</div>
+          <div class="pbar"><i style="width:88%"></i></div>
+          <button class="btn-primary" style="margin-top:14px;width:100%;justify-content:center;padding:11px" data-go="service">Objednat servis</button>
+        </div>
+        <div class="card status-card">
+          <div class="top"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg></div><div class="eyebrow-sm">Pneumatiky · sezóna</div></div>
+          <div class="big">Letní</div>
+          <div class="sub">Přezuto 04/2026 · dezén 6,5 mm. <b style="color:var(--ink)">Přezutí na zimní</b> doporučeno v listopadu.</div>
+          <button class="btn-ghost" style="margin-top:14px;width:100%;padding:11px" data-go="service">Rezervovat přezutí</button>
+        </div>
+      </div>
+
+      <!-- Pojištění vozu -->
+      <div class="sec-h"><h3>Pojištění <span class="idx">(vašeho vozu)</span></h3><a data-go="insurance">Správa smluv →</a></div>
+      <div class="card" style="padding:22px">
+        <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+          <div class="ic" style="width:52px;height:52px;border-radius:14px;background:var(--blue);color:#fff;display:grid;place-items:center;flex:none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M12 8v4"/><circle cx="12" cy="15.5" r=".6" fill="currentColor"/></svg></div>
+          <div style="flex:1;min-width:220px">
+            <b style="font-size:15.5px;display:block">Havarijní pojištění brzy vyprší</b>
+            <span style="font-size:13px;color:var(--muted)">Allianz · platnost do <b style="color:var(--ink)">10/2026</b> · zbývají už jen <b style="color:var(--blue)">3 měsíce</b></span>
+            <div class="pbar" style="height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:11px;max-width:320px"><i style="display:block;height:100%;width:92%;background:var(--blue)"></i></div>
+          </div>
+          <button class="btn-primary" style="justify-content:center">Domluvit / obnovit pojištění <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+
+      <div class="prod-grid" style="margin-top:16px">
+        <div class="prod best">
+          <div class="flag" style="position:absolute;top:18px;right:18px;background:var(--blue);color:#fff;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:5px 10px;border-radius:7px">★ Nejlepší</div>
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <div class="st"><i></i>Autobond Deal</div>
+          <h4>Autobond Pojištění+</h4>
+          <p>Povinné ručení + havarijní + skla v jednom. Exkluzivní sazba pro vozy koupené v Autobondu, sjednání online za 2 minuty a asistence 24/7.</p>
+          <div class="pr">790 Kč <small>/ měsíc</small></div>
+          <button class="btn-primary" style="width:100%;justify-content:center">Sjednat Autobond Deal</button>
+        </div>
+        <div class="prod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div>
+          <div class="st off"><i></i>Partner</div>
+          <h4>Allianz Komplet</h4>
+          <p>Povinné ručení + havarijní pojištění, limit 200/200 mil. Kč, spoluúčast 5 %. Osvědčená klasika.</p>
+          <div class="pr">2 900 Kč <small>/ měsíc</small></div>
+          <button class="btn-ghost" style="width:100%">Zobrazit nabídku</button>
+        </div>
+        <div class="prod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div>
+          <div class="st off"><i></i>Partner</div>
+          <h4>ČSOB Pojišťovna</h4>
+          <p>Komplexní krytí s připojištěním zavazadel a úrazu posádky. Rozšířená asistence po celé Evropě.</p>
+          <div class="pr">4 000 Kč <small>/ měsíc</small></div>
+          <button class="btn-ghost" style="width:100%">Zobrazit nabídku</button>
+        </div>
+      </div>
+
+      </div><!-- /panel stk -->
+
+      <div class="sec-h"><h3>Historie vozidel <span class="idx">(3)</span></h3><a>Vše zakoupené v Autobondu</a></div>
+      <div class="owned-list" id="owned-cars"></div>
+    </section>
+
+    <!-- OFFER -->
+    <section class="view" id="v-offer">
+      <h1 class="page">Nabídka <span class="ac">vozů</span></h1>
+      <p class="page-sub">Kompletní nabídka prověřených vozů skladem — napojeno živě na databázi Autobond. Prodané mizí, nové přibývají automaticky.</p>
+      <button class="fp-toggle" id="fp-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5h18M6 12h12M10 19h4"/></svg>Filtr</button>
+      <div class="offer-layout">
+        <aside class="filter-panel" id="filter-panel">
+          <div class="fp-head"><b>Filtr</b><button id="fp-reset">Vymazat vše</button></div>
+          <div class="fp-sec"><label>Značka</label><div class="brand-list" id="fp-brands"></div></div>
+          <div class="fp-sec"><label>Cena (Kč)</label><div class="fp-row"><select class="fp-sel" id="fp-pmin"></select><span>–</span><select class="fp-sel" id="fp-pmax"></select></div></div>
+          <div class="fp-sec"><label>Rok výroby od</label><select class="fp-sel" id="fp-year"></select></div>
+          <div class="fp-sec"><label>Palivo</label><div class="ck-row" id="fp-fuel"></div></div>
+          <div class="fp-sec"><label>Převodovka</label><div class="ck-row" id="fp-gear"></div></div>
+          <div class="fp-sec"><label>Nájezd do</label><select class="fp-sel" id="fp-km"></select></div>
+          <div class="fp-sec"><label class="ck" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);margin:0;font-weight:500"><input type="checkbox" id="fp-sale"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg></span>Jen akční vozy</label></div>
+        </aside>
+        <div class="offer-main">
+          <div class="offer-top">
+            <div class="count" id="result-count"></div>
+            <select class="sort-sel" id="sort">
+              <option value="price-asc">Cena: od nejlevnějšího</option>
+              <option value="price-desc">Cena: od nejdražšího</option>
+              <option value="year-desc">Nejnovější</option>
+              <option value="km-asc">Nejnižší nájezd</option>
+              <option value="save-desc">Největší sleva</option>
+            </select>
+          </div>
+          <div class="offer-grid" id="offer-cars"></div>
+          <button class="load-more" id="load-more" style="display:none">Zobrazit další vozy</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CAR DETAIL (mobile.de styl) -->
+    <section class="view" id="v-car">
+      <div id="car-detail"></div>
+    </section>
+
+    <!-- FAVORITES -->
+    <section class="view" id="v-favorites">
+      <h1 class="page">Oblíbené <span class="ac">vozy</span></h1>
+      <p class="page-sub">Vozy, které jste si uložili klepnutím na srdíčko. Seznam zůstává i po zavření prohlížeče. <b id="fav-count-h" style="color:var(--ink)">0</b> uložených.</p>
+      <div class="offer-grid" id="fav-cars"></div>
+      <div class="empty" id="fav-empty" style="display:none">
+        Zatím nemáte žádné oblíbené vozy.<br>Klepněte na ♥ u kteréhokoli vozu v nabídce a uloží se sem.
+        <div style="margin-top:18px"><button class="btn-primary" data-go="offer" style="justify-content:center">Procházet nabídku vozů</button></div>
+      </div>
+    </section>
+
+    <!-- SERVICE -->
+    <section class="view" id="v-service">
+      <h1 class="page"><span class="ac">Servis</span></h1>
+      <p class="page-sub">Objednejte se jedním klepnutím. Nejbližší volný termín je již zítra v 8:30.</p>
+
+      <div class="card" style="padding:24px;margin-bottom:20px">
+        <div class="donut-head"><h3 style="font-size:18px">Objednat termín</h3><div class="chip dark">Toyota C-HR · 4AB 7721</div></div>
+        <label class="book-lbl" style="margin-top:4px">Typ servisu</label>
+        <div class="filters" id="book-svc" style="margin-bottom:0">
+          <div class="fchip active" data-price="3480">Pravidelný servis · 3 480 Kč</div>
+          <div class="fchip" data-price="1290">Výměna oleje · 1 290 Kč</div>
+          <div class="fchip" data-price="990">Pneuservis · 990 Kč</div>
+          <div class="fchip" data-price="690">Diagnostika · 690 Kč</div>
+          <div class="fchip" data-price="1490">Klimatizace · 1 490 Kč</div>
+          <div class="fchip" data-price="2400">Detailing · 2 400 Kč</div>
+        </div>
+        <label class="book-lbl">Termín</label>
+        <div class="book-grid" id="book-days">
+          <div class="slot sel">Pá 18.7<small>zítra</small></div>
+          <div class="slot">So 19.7<small>volno</small></div>
+          <div class="slot">Po 21.7<small>volno</small></div>
+          <div class="slot">Út 22.7<small>volno</small></div>
+          <div class="slot">St 23.7<small>volno</small></div>
+          <div class="slot">Čt 24.7<small>volno</small></div>
+        </div>
+        <label class="book-lbl">Čas</label>
+        <div class="book-grid" id="book-times">
+          <div class="slot sel">8:30</div><div class="slot">10:00</div><div class="slot">11:30</div>
+          <div class="slot">13:00</div><div class="slot">14:30</div><div class="slot">16:00</div>
+        </div>
+        <label class="book-lbl">Doplňkové služby</label>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label class="ck" style="font-size:13.5px;font-weight:500"><input type="checkbox" data-extra="800"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg></span>Náhradní vozidlo na dobu servisu<span class="cnt">+ 800 Kč</span></label>
+          <label class="ck" style="font-size:13.5px;font-weight:500"><input type="checkbox" data-extra="400"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg></span>Odvoz a vyzvednutí vozu (Praha / Ostrava)<span class="cnt">+ 400 Kč</span></label>
+          <label class="ck" style="font-size:13.5px;font-weight:500"><input type="checkbox" data-extra="0"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg></span>Umytí vozu zdarma<span class="cnt" style="color:var(--blue)">v ceně</span></label>
+        </div>
+        <div class="book-total">
+          <div><div class="t">Cena celkem</div><div class="p" id="book-price">3 480 Kč</div></div>
+          <button class="btn-primary" id="book-cta" style="padding:15px 26px">Rezervovat termín <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+
+      <div class="grid g-3" style="margin-bottom:20px">
+        <div class="card" style="padding:22px"><div class="qa-ic" style="width:46px;height:46px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><h3 style="font-size:17px;font-weight:800;margin:14px 0 6px">Pravidelný servis</h3><p style="font-size:13px;color:var(--muted);line-height:1.5">Kompletní prohlídka dle servisního plánu Toyota. Doporučeno za 1 360 km.</p><button class="btn-primary" style="margin-top:16px;width:100%;justify-content:center">Objednat</button></div>
+        <div class="card" style="padding:22px"><div class="qa-ic" style="width:46px;height:46px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3 style="font-size:17px;font-weight:800;margin:14px 0 6px">Výměna oleje</h3><p style="font-size:13px;color:var(--muted);line-height:1.5">Olej + filtry, cca 60 minut. Náhradní vůz zdarma.</p><button class="btn-ghost" style="margin-top:16px;width:100%">Objednat</button></div>
+        <div class="card" style="padding:22px"><div class="qa-ic" style="width:46px;height:46px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div><h3 style="font-size:17px;font-weight:800;margin:14px 0 6px">Pneuservis</h3><p style="font-size:13px;color:var(--muted);line-height:1.5">Přezutí, uskladnění, geometrie. Sezónní balíček.</p><button class="btn-ghost" style="margin-top:16px;width:100%">Objednat</button></div>
+      </div>
+      <div class="filters"><div class="fchip active">Vše</div><div class="fchip">Diagnostika</div><div class="fchip">Klimatizace</div><div class="fchip">Geometrie</div><div class="fchip">Detailing</div><div class="fchip">Mytí vozu</div><div class="fchip">Náhradní vozidlo</div><div class="fchip">Odvoz / vyzvednutí</div></div>
+      <div class="card" style="padding:24px;margin-top:6px">
+        <div class="donut-head"><h3 style="font-size:17px">Digitální servisní knížka</h3><div class="chip dark">14 záznamů</div></div>
+        <div class="svc-list">
+          <div class="svc"><div class="n">01</div><div><b>Servisní prohlídka 30 000</b><span>02.06.2026 · 28 400 km · Toyota Ostrava</span></div><div class="money"><b>3 480 Kč</b></div></div>
+          <div class="svc"><div class="n">02</div><div><b>Přezutí zimní → letní</b><span>04.04.2026 · pneuservis</span></div><div class="money"><b>1 100 Kč</b></div></div>
+          <div class="svc"><div class="n">03</div><div><b>Výměna kabinového filtru</b><span>18.02.2026 · 24 100 km</span></div><div class="money"><b>690 Kč</b></div></div>
+          <div class="svc"><div class="n">04</div><div><b>Servisní prohlídka 15 000</b><span>20.06.2025 · 14 900 km</span></div><div class="money"><b>2 980 Kč</b></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOCS -->
+    <section class="view" id="v-docs">
+      <h1 class="page"><span class="ac">Dokumenty</span></h1>
+      <p class="page-sub">Digitální archiv všech dokumentů k vašemu vozu na jednom místě.</p>
+      <div class="grid g-2" id="docs-list"></div>
+    </section>
+
+    <!-- TRADE-IN -->
+    <section class="view" id="v-tradein">
+      <h1 class="page">Výkup &amp; <span class="ac">protiúčet</span></h1>
+      <p class="page-sub">Orientační výkupní cena vašeho vozu a automatický výpočet doplatku na nový.</p>
+      <div class="grid g-2" style="align-items:start">
+        <!-- Váš vůz na výkup -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="position:relative;height:210px"><img src="images/toyota-c-hr-1-8-hev-limited-edition.jpeg" style="width:100%;height:100%;object-fit:cover" alt="C-HR"/><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(6,11,46,.6))"></div><div style="position:absolute;left:20px;bottom:16px;color:#fff"><div class="label" style="color:rgba(255,255,255,.85)">Váš vůz · předvyplněno</div><div class="disp" style="font-size:22px;font-weight:800;margin-top:4px">Toyota C-HR 1.8 HEV</div></div></div>
+          <div style="padding:22px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><div class="chip">28 640 km</div><div class="chip">2026</div><div class="chip">bez poškození</div><div class="chip">plný servis</div><div class="chip">1. majitel</div></div>
+            <div style="text-align:center;padding:6px 0 14px"><div class="eyebrow-sm">Orientační výkupní cena</div><div class="disp" style="font-size:40px;font-weight:800;margin-top:4px;color:var(--blue)">565 000 <span style="font-size:18px;color:var(--ink)">Kč</span></div><div style="font-size:12px;color:var(--muted);margin-top:2px">Platnost nabídky 14 dní · výkup i bez koupě nového vozu</div></div>
+            <button class="btn-primary" style="width:100%;justify-content:center">Požádat o výkup</button>
+          </div>
+        </div>
+        <!-- Vůz, který si pořizujete — zvýrazněný -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="buy-hero">
+            <div class="badge-new">Nový vůz · na protiúčet</div>
+            <img src="images/baic-bj30-all-in-1-5t-298kw-hev-4x4.jpeg" alt="BAIC BJ30"/>
+            <div class="over"><div class="label" style="color:rgba(255,255,255,.85)">Vůz, který si pořizujete</div><div class="disp">BAIC BJ30 ALL IN 1.5T HEV 4×4</div></div>
+          </div>
+          <div style="padding:22px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><div class="chip">2026</div><div class="chip">Hybrid</div><div class="chip">4×4</div><div class="chip">209 kW</div><div class="chip">nový vůz</div></div>
+            <div class="priceline" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px"><div class="disp" style="font-size:30px;font-weight:800;letter-spacing:-.03em">879 900 <span style="font-size:15px;color:var(--muted)">Kč</span></div><div style="font-size:14px;color:var(--muted);text-decoration:line-through">949 900 Kč</div></div>
+            <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:14px">Akční sleva 70 000 Kč</div>
+            <div style="display:flex;gap:10px"><button class="btn-primary" id="tradein-view" style="flex:1;justify-content:center">Prohlédnout vůz</button><button class="btn-ghost" style="flex:1">Rezervovat</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabulky: rozklad ceny + protiúčet -->
+      <div class="grid g-2" style="align-items:start;margin-top:20px">
+        <div class="card" style="padding:24px">
+          <div class="donut-head"><h3 style="font-size:17px">Z čeho se skládá výkupní cena</h3><div class="chip">orientační</div></div>
+          <table class="vtable">
+            <tr><td>Základní tržní cena<span class="mut">Toyota C-HR 1.8 HEV · rok 2024</span></td><td>585 000 Kč</td></tr>
+            <tr><td>Nájezd 28 640 km<span class="mut">mírně podprůměrný na stáří vozu</span></td><td>− 22 000 Kč</td></tr>
+            <tr><td>Technický stav<span class="mut">bez poškození, 1. majitel</span></td><td>0 Kč</td></tr>
+            <tr class="plus"><td>Kompletní servisní historie<span class="mut">vše v síti Autobond</span></td><td>+ 6 000 Kč</td></tr>
+            <tr class="plus"><td>2 sady kol (zimní + letní)</td><td>+ 4 000 Kč</td></tr>
+            <tr><td>Aktuální poptávka po hybridech</td><td>− 8 000 Kč</td></tr>
+            <tr class="sum"><td>Orientační výkupní cena</td><td>565 000 Kč</td></tr>
+          </table>
+          <p style="font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.5">Konečná cena po fyzické prohlídce vozu (cca 20 min) v kterékoli pobočce Autobond. Výkup proplácíme převodem do 48 hodin.</p>
+        </div>
+        <div class="card" style="padding:24px">
+          <div class="donut-head"><h3 style="font-size:17px">Protiúčet &amp; doplatek</h3><div class="chip blue">BAIC BJ30 HEV 4×4</div></div>
+          <table class="vtable">
+            <tr><td>Ceníková cena nového vozu</td><td>949 900 Kč</td></tr>
+            <tr><td>Akční sleva</td><td>− 70 000 Kč</td></tr>
+            <tr><td>Výkup vašeho vozu</td><td>− 565 000 Kč</td></tr>
+            <tr class="sum"><td>Doplatek</td><td>314 900 Kč</td></tr>
+          </table>
+          <label class="book-lbl">Financování doplatku</label>
+          <div class="finvars" id="finvars">
+            <div class="finvar"><div class="lab">Akontace 0 %<small>72 měsíců · RPSN 6,9 %</small></div><div class="amt">5 490 <small>Kč/měs</small></div></div>
+            <div class="finvar sel"><div class="lab">Akontace 20 %<small>60 měsíců · RPSN 5,9 %</small></div><div class="amt">4 290 <small>Kč/měs</small></div></div>
+            <div class="finvar"><div class="lab">Akontace 50 %<small>48 měsíců · RPSN 4,9 %</small></div><div class="amt">2 990 <small>Kč/měs</small></div></div>
+          </div>
+          <button class="btn-primary" style="width:100%;justify-content:center;margin-top:16px">Sjednat protiúčet</button>
+        </div>
+      </div>
+
+      <!-- Focení vozu pro výkupního technika -->
+      <div class="sec-h"><h3>Nafoťte vůz pro přesné nacenění</h3><div class="chip">pro výkupního technika</div></div>
+      <div class="card" id="shoot-card" style="padding:24px">
+        <div class="photo-instr">
+          <b>📸 Jak vůz správně vyfotit</b>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Za denního světla, vůz umytý a na volném prostranství</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Celý vůz v záběru, z odstupu ~3 metry</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Nafoťte všechny úhly níže (předek, zadek, oba boky)</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Interiér, stav tachometru i motorový prostor</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Zblízka vyfoťte případná poškození (škrábance, promáčkliny)</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Čím víc detailů, tím přesnější nabídka výkupu</li>
+          </ul>
+        </div>
+        <div class="shoot-grid" id="shoot-grid"></div>
+        <div class="book-total" style="margin-top:20px">
+          <div><div class="t">Nahráno fotek</div><div class="p"><span id="shoot-count">0</span> / 9</div></div>
+          <button class="btn-primary" id="shoot-send" style="padding:15px 26px">Odeslat výkupnímu technikovi <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+        </div>
+      </div>
+      <div class="card" id="shoot-waiting" style="padding:34px;display:none;text-align:center">
+        <div class="pending"></div>
+        <div class="chip blue" style="margin:0 auto 14px">Odesláno</div>
+        <h3 style="font-size:21px;font-weight:800;margin-bottom:8px">Čeká se na odpověď prodejce</h3>
+        <p style="font-size:13.5px;color:var(--muted);max-width:460px;margin:0 auto;line-height:1.55">Nahráli jste <b data-sent style="color:var(--ink)">0</b> fotek vozu. Výkupní technik je posoudí a ozve se vám s konkrétní závaznou nabídkou — obvykle <b style="color:var(--ink)">do 2 hodin</b> v pracovní době.</p>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+          <div class="chip">Stav: čeká na posouzení</div>
+          <div class="chip">Reakce obvykle do 2 h</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVICES -->
+    <section class="view" id="v-services">
+      <h1 class="page">Služby <span class="ac">Autobond</span></h1>
+      <p class="page-sub">Vše pro váš vůz na jednom místě — od servisu přes detailing až po pojištění a nabíjení. Prémiové výhody a paušály získáte s členstvím Garage+.</p>
+      <div class="ai" style="margin-bottom:26px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+        <div style="flex:1;min-width:240px">
+          <div class="k">Garage+ členství</div>
+          <h3 style="margin-bottom:6px">Ušetřete až 30 % <span class="ac">každý rok.</span></h3>
+          <p style="max-width:100%;margin-bottom:0">Mytí, detailing, servis i asistence v jednom měsíčním paušálu. Bez závazků, kdykoli zrušitelné.</p>
+        </div>
+        <button class="btn-primary" data-go="garageplus">Prohlédnout členství <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+      </div>
+      <div id="services-root"></div>
+    </section>
+
+    <!-- GARAGE+ -->
+    <section class="view" id="v-garageplus">
+      <h1 class="page">Garage<span class="ac">+</span></h1>
+      <p class="page-sub">Prémiové členství, které se vyplatí od prvního měsíce. Vyberte si úroveň péče o svůj vůz — vše za jednu předvídatelnou platbu, kdykoli zrušitelné.</p>
+      <div class="plans">
+        <div class="plan">
+          <div class="tier">Silver</div>
+          <div class="price">990 <small>Kč / měsíc</small></div>
+          <div class="desc">Základní péče a výhody pro každodenní jízdu.</div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Mytí vozu 1× měsíčně</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>10 % sleva na servis a díly</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Digitální servisní knížka</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Přednostní online termíny</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Připomínky STK, pojištění, servisu</li>
+          </ul>
+          <button class="btn-ghost" data-plan="silver">Vybrat Silver</button>
+        </div>
+        <div class="plan featured">
+          <div class="flag">Nejoblíbenější</div>
+          <div class="tier">Gold</div>
+          <div class="price">2 490 <small>Kč / měsíc</small></div>
+          <div class="desc">Kompletní péče včetně detailingu a náhradního vozu.</div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Vše ze Silver</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Detailing 4× ročně</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>20 % sleva na servis a díly</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Náhradní vůz při servisu zdarma</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Sezónní přezutí + uskladnění pneu</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Asistenční služba 24/7</li>
+          </ul>
+          <button class="btn-primary" data-plan="gold">Vybrat Gold</button>
+        </div>
+        <div class="plan">
+          <div class="tier">Platinum</div>
+          <div class="price">5 290 <small>Kč / měsíc</small></div>
+          <div class="desc">Bezstarostné vlastnictví s concierge péčí.</div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Vše z Gold</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Neomezené mytí vozu</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Kompletní servisní plán v ceně</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Prodloužená záruka</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Pick-up &amp; delivery vozu</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>Osobní concierge poradce</li>
+          </ul>
+          <button class="btn-ghost" data-plan="platinum">Vybrat Platinum</button>
+        </div>
+      </div>
+      <div class="sec-h"><h3>Jednotlivá předplatná <span class="idx">(à la carte)</span></h3></div>
+      <div class="grid g-4">
+        <div class="svc-tile" style="min-height:150px"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l1.8 4.5L18 9l-3.5 3 1 5-3.5-2.2L8.5 17l1-5L6 9l4.2-1.5z"/></svg></div><b>Detailing předplatné</b><span style="font-size:12px;color:var(--muted)">4× ročně kompletní detailing</span><span class="t sub">od 349 Kč / měs</span></div>
+        <div class="svc-tile" style="min-height:150px"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 12a8 8 0 0 1 16 0"/><path d="M12 12l4-2"/><circle cx="12" cy="12" r="1.5"/></svg></div><b>Mytí flat-rate</b><span style="font-size:12px;color:var(--muted)">Neomezené mytí vozu</span><span class="t sub">od 199 Kč / měs</span></div>
+        <div class="svc-tile" style="min-height:150px"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><b>Servisní plán</b><span style="font-size:12px;color:var(--muted)">Prepaid prohlídky na 3 roky</span><span class="t sub">od 259 Kč / měs</span></div>
+        <div class="svc-tile" style="min-height:150px"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div><b>Pneuhotel</b><span style="font-size:12px;color:var(--muted)">Přezutí + sezónní uskladnění</span><span class="t sub">od 99 Kč / měs</span></div>
+      </div>
+    </section>
+
+    <!-- EV & CHARGING -->
+    <section class="view" id="v-ev">
+      <h1 class="page">EV &amp; <span class="ac">nabíjení</span></h1>
+      <p class="page-sub">Kondice baterie, nabíjecí stanice v okolí a přehled spotřeby — pro elektromobily i hybridy Autobond.</p>
+      <div class="grid g-2">
+        <div class="card" style="padding:24px">
+          <div class="donut-head"><div><div class="eyebrow-sm">Toyota C-HR · hybridní baterie</div><h3 style="margin-top:4px">Kondice baterie</h3></div><div class="chip blue">Certifikát</div></div>
+          <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 12px"><div class="disp" style="font-size:44px;font-weight:800">94<span style="font-size:22px">%</span></div><div style="font-size:12px;color:var(--muted)">State of Health · nadprůměrné</div></div>
+          <div class="gauge"><i style="width:94%"></i></div>
+          <div class="ev-stats">
+            <div class="ev-stat"><div class="k">Dojezd</div><div class="v">78 <small style="font-size:12px;color:var(--muted)">km EV</small></div></div>
+            <div class="ev-stat"><div class="k">Cyklů</div><div class="v">312</div></div>
+            <div class="ev-stat"><div class="k">Záruka do</div><div class="v">2036</div></div>
+          </div>
+          <button class="btn-ghost" style="width:100%;margin-top:18px">Stáhnout certifikát kondice baterie</button>
+        </div>
+        <div class="card" style="padding:24px">
+          <div class="donut-head"><h3 style="font-size:17px">Nabíječky v okolí</h3><div class="chip" id="ev-count">načítám…</div></div>
+          <div id="ev-map" style="height:300px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(180deg,#eef1f8,#e5eaf4);position:relative;z-index:0"></div>
+          <div style="font-size:11px;color:var(--muted);margin:8px 2px 0">Živá mapa (OpenStreetMap) — vždy vycentrovaná přibližně na vaši polohu. Povolte v prohlížeči přístup k poloze pro přesné výsledky.</div>
+          <div class="svc-list" id="ev-charger-list" style="margin-top:6px"></div>
+        </div>
+      </div>
+
+      <div class="grid g-2" style="margin-top:20px">
+        <div class="ai">
+          <div class="k">Domácí nabíjení</div>
+          <h3>Wallbox domů <span class="ac">na klíč.</span></h3>
+          <p>Instalace nabíjecí stanice u vás doma přes ověřeného partnera Autobond — včetně poradenství k dotaci.</p>
+          <button class="btn-primary">Nezávazná poptávka <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+        <div class="card" style="padding:24px">
+          <div class="donut-head"><h3 style="font-size:17px">Tarif nabíjení</h3><div class="chip sub" style="background:var(--chip)">Předplatné</div></div>
+          <div class="disp" style="font-size:34px;font-weight:800;margin:6px 0 2px">6,90 <span style="font-size:15px;color:var(--muted)">Kč / kWh</span></div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px">Zvýhodněná sazba u všech partnerských stanic Autobond.</div>
+          <div class="svc-list">
+            <div class="svc"><div class="n">01</div><div><b>Tento měsíc nabito</b><span>142 kWh · 8 relací</span></div><div class="money"><b>980 Kč</b></div></div>
+            <div class="svc"><div class="n">02</div><div><b>Úspora oproti benzínu</b><span>vs. srovnatelný vůz</span></div><div class="money"><b style="color:var(--blue)">− 2 300 Kč</b></div></div>
+          </div>
+          <button class="btn-ghost" style="width:100%;margin-top:16px">Aktivovat tarif</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSURANCE -->
+    <section class="view" id="v-insurance">
+      <h1 class="page">Pojištění <span class="ac">vozu</span></h1>
+      <p class="page-sub">Přehled vašich smluv na jednom místě + možnost sjednat výhodnější pojištění přímo v aplikaci. Bez papírování, s okamžitou platností.</p>
+      <div class="grid g-2">
+        <div class="ai">
+          <div class="k">Aktivní ochrana</div>
+          <h3>Váš vůz je <span class="ac">chráněn.</span></h3>
+          <p>Povinné ručení, havarijní pojištění i pojištění skel jsou aktivní do 05/2027. Přeplácíte? Najdeme vám lepší nabídku za 2 minuty.</p>
+          <button class="btn-primary">Získat výhodnější nabídku <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+        <div class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px;justify-content:center">
+          <div><div class="eyebrow-sm">Nouzová situace</div><h3 style="font-size:20px;font-weight:800;margin-top:4px">Stala se nehoda?</h3></div>
+          <p style="font-size:13px;color:var(--muted);line-height:1.5;margin:0">Nahlaste pojistnou událost přímo z místa — foto, video i poloha se automaticky odešlou pojišťovně.</p>
+          <button class="btn-primary" style="justify-content:center">Nahlásit pojistnou událost</button>
+          <button class="btn-ghost">Zavolat asistenční službu 24/7</button>
+        </div>
+      </div>
+
+      <div class="sec-h"><h3>Vaše smlouvy <span class="idx">(3 aktivní)</span></h3><a>Spravovat</a></div>
+      <div class="card" style="padding:24px">
+        <div class="svc-list">
+          <div class="svc"><div class="n"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div><div><b>Povinné ručení</b><span>Allianz · do 05/2027 · limit 200/200 mil. Kč</span></div><div class="money"><b>4 680 Kč</b><span style="color:var(--blue)">Aktivní</span></div></div>
+          <div class="svc"><div class="n"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div><div><b>Havarijní pojištění</b><span>Allianz · do 05/2027 · spoluúčast 5 %</span></div><div class="money"><b>8 280 Kč</b><span style="color:var(--blue)">Aktivní</span></div></div>
+          <div class="svc"><div class="n"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div><div><b>Pojištění skel</b><span>do 05/2027 · limit 30 000 Kč</span></div><div class="money"><b>1 080 Kč</b><span style="color:var(--blue)">Aktivní</span></div></div>
+        </div>
+      </div>
+
+      <div class="sec-h"><h3>Rozšiřte si ochranu <span class="idx">(doporučeno)</span></h3></div>
+      <div class="prod-grid">
+        <div class="prod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg></div>
+          <div class="st off"><i></i>Nesjednáno</div>
+          <h4>GAP pojištění</h4>
+          <p>Při totální škodě nebo krádeži doplatí rozdíl mezi vyplacenou a pořizovací cenou vozu. Ideální pro nové vozy.</p>
+          <div class="pr">od 210 Kč <small>/ měsíc</small></div>
+          <button class="btn-primary" style="justify-content:center">Sjednat GAP</button>
+        </div>
+        <div class="prod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div>
+          <div class="st off"><i></i>Nesjednáno</div>
+          <h4>Rozšířená asistence</h4>
+          <p>Odtah bez limitu km, náhradní vůz, ubytování i pokračování v cestě — v ČR i celé Evropě, 24/7.</p>
+          <div class="pr">od 60 Kč <small>/ měsíc</small></div>
+          <button class="btn-ghost" style="width:100%">Přidat asistenci</button>
+        </div>
+        <div class="prod">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 7 9 18l-5-5"/></svg></div>
+          <div class="st off"><i></i>Nesjednáno</div>
+          <h4>Připojištění úrazu</h4>
+          <p>Finanční plnění pro řidiče i posádku při úrazu způsobeném dopravní nehodou.</p>
+          <div class="pr">od 80 Kč <small>/ měsíc</small></div>
+          <button class="btn-ghost" style="width:100%">Přidat připojištění</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:24px;margin-top:20px">
+        <div class="donut-head"><div><div class="eyebrow-sm">Kalkulačka</div><h3 style="margin-top:4px;font-size:17px">Spočítat nové pojištění</h3></div><div class="chip">Toyota C-HR · 4AB 7721</div></div>
+        <div class="grid g-3" style="gap:12px;margin-bottom:16px">
+          <div><label class="book-lbl" style="margin:0 0 8px">Roční nájezd</label><select class="fp-sel"><option>do 10 000 km</option><option selected>do 20 000 km</option><option>do 30 000 km</option><option>více</option></select></div>
+          <div><label class="book-lbl" style="margin:0 0 8px">Spoluúčast</label><select class="fp-sel"><option>1 %</option><option selected>5 %</option><option>10 %</option></select></div>
+          <div><label class="book-lbl" style="margin:0 0 8px">Územní platnost</label><select class="fp-sel"><option>Česká republika</option><option selected>Evropa</option></select></div>
+        </div>
+        <div class="book-total" style="margin-top:0;border-top:0;padding-top:0">
+          <div><div class="t">Orientační cena POV + Havarijní</div><div class="p">od 1 060 Kč <span style="font-size:14px;color:var(--muted)">/ měsíc</span></div></div>
+          <button class="btn-primary">Chci tuto nabídku</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="view" id="v-history">
+      <h1 class="page">Historie <span class="ac">vozu</span></h1>
+      <p class="page-sub">Kompletní časová osa vašeho vozu — koupě, servisy, pojistné události i vývoj hodnoty. Vše ověřené a připravené k předání případnému kupci.</p>
+      <div class="grid g-4">
+        <div class="card" style="padding:18px"><div class="eyebrow-sm">Ve vlastnictví</div><div class="disp" style="font-size:26px;font-weight:800;margin-top:6px">2 roky</div></div>
+        <div class="card" style="padding:18px"><div class="eyebrow-sm">Aktuální nájezd</div><div class="disp" style="font-size:26px;font-weight:800;margin-top:6px">28 640 <span style="font-size:14px;color:var(--muted)">km</span></div></div>
+        <div class="card" style="padding:18px"><div class="eyebrow-sm">Servisních úkonů</div><div class="disp" style="font-size:26px;font-weight:800;margin-top:6px">6</div></div>
+        <div class="card" style="padding:18px"><div class="eyebrow-sm">Náklady na servis</div><div class="disp" style="font-size:26px;font-weight:800;margin-top:6px">12 960 <span style="font-size:14px;color:var(--muted)">Kč</span></div></div>
+      </div>
+
+      <div class="grid g-2" style="margin-top:20px;align-items:start">
+        <div class="card" style="padding:24px">
+          <div class="donut-head"><h3 style="font-size:17px">Časová osa</h3><div class="chip dark">7 událostí</div></div>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><div class="tl-body"><div class="tl-main"><div class="d">Červenec 2026</div><b>Servisní prohlídka 30 000 km</b><p>Toyota Ostrava · 28 400 km · olej, filtry, kontrola</p></div><div class="tl-cost">3 480 Kč</div></div></div>
+            <div class="tl-item"><div class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div><div class="tl-body"><div class="tl-main"><div class="d">Duben 2026</div><b>Přezutí zimní → letní</b><p>Pneuservis · uskladnění zimní sady</p></div><div class="tl-cost">1 100 Kč</div></div></div>
+            <div class="tl-item"><div class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><div class="tl-body"><div class="tl-main"><div class="d">Leden 2026</div><b>Výměna brzdových destiček</b><p>Toyota Ostrava · 24 100 km · přední náprava</p></div><div class="tl-cost">4 200 Kč</div></div></div>
+            <div class="tl-item"><div class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div><div class="tl-body"><div class="tl-main"><div class="d">Říjen 2025</div><b>Pojistná událost — čelní sklo</b><p>Odlétnutý kamínek · výměna skla · hrazeno pojišťovnou</p></div><div class="tl-cost free">0 Kč</div></div></div>
+            <div class="tl-item"><div class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div><div class="tl-body"><div class="tl-main"><div class="d">Červen 2025</div><b>Servisní prohlídka 15 000 km</b><p>Toyota Ostrava · 14 900 km</p></div><div class="tl-cost">2 980 Kč</div></div></div>
+            <div class="tl-item"><div class="tl-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/></svg></div><div class="tl-body"><div class="tl-main"><div class="d">Červen 2024</div><b>Sjednání pojištění</b><p>Povinné ručení + havarijní + skla · Allianz</p></div><div class="tl-cost">14 040 Kč</div></div></div>
+            <div class="tl-item"><div class="tl-dot buy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13v6h-2v-2H7v2H5z"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg></div><div class="tl-body"><div class="tl-main"><div class="d">Červen 2024</div><b>Koupě vozu v Autobondu</b><p>Toyota C-HR 1.8 HEV Limited Edition · prověřeno CEBIA</p></div><div class="tl-cost">639 000 Kč</div></div></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div class="card" style="padding:24px">
+            <div class="donut-head"><h3 style="font-size:17px">Vývoj hodnoty</h3><div class="chip">odhad</div></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin:8px 0 6px">
+              <div><div class="eyebrow-sm">Pořizovací</div><div class="disp" style="font-size:22px;font-weight:800">639 000</div></div>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              <div style="text-align:right"><div class="eyebrow-sm">Aktuální odhad</div><div class="disp" style="font-size:22px;font-weight:800;color:var(--blue)">565 000</div></div>
+            </div>
+            <div class="gauge" style="margin-top:10px"><i style="width:88%"></i></div>
+            <p style="font-size:12px;color:var(--muted);margin-top:10px">Váš vůz si drží <b style="color:var(--ink)">88 %</b> hodnoty — nadprůměrně díky kompletní servisní historii.</p>
+          </div>
+          <div class="ai">
+            <div class="k">Chytrý prodej</div>
+            <h3>Nejlepší čas <span class="ac">prodat?</span></h3>
+            <p>Podle nájezdu, stáří a aktuální poptávky je teď vhodná doba na výkup. Nechte si nezávazně nacenit.</p>
+            <button class="btn-primary" data-go="tradein">Nechat vykoupit <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <div class="bn active" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg><span>Domů</span></div>
+  <div class="bn" data-go="offer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg><span>Nabídka</span></div>
+  <div class="bn" data-go="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Služby</span></div>
+  <div class="bn" data-go="garageplus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg><span>Garage+</span></div>
+  <div class="bn" data-go="garage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13v6h-2v-2H7v2H5z"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg><span>Auta</span></div>
+</nav>
+
+<!-- Checkout modal (výběr plánu Garage+) -->
+<div class="modal-backdrop" id="plan-modal">
+  <div class="modal">
+    <button class="modal-x" data-act="close" aria-label="Zavřít">✕</button>
+    <div class="stepper" id="plan-steps"><div class="st">1 · Přehled</div><div class="st">2 · Platba</div><div class="st">3 · Hotovo</div></div>
+    <div class="modal-body" id="plan-body"></div>
+  </div>
+</div>
+
+<script src="cars-data.js"></script>
+<script>
+const CARS = (window.CARS||[]);
+CARS.forEach((c,i)=>c._i=i);
+const fmt = n => (n||0).toLocaleString('cs-CZ').replace(/ /g,' ').replace(/,/g,' ');
+const isSale = c => c.o && c.o>c.p;
+
+/* ---- Oblíbené (přetrvává v localStorage) ---- */
+const FAVS = new Set((()=>{try{return JSON.parse(localStorage.getItem('mg_favs')||'[]')}catch{return[]}})());
+function saveFavs(){try{localStorage.setItem('mg_favs',JSON.stringify([...FAVS]))}catch{}}
+function toggleFav(i){ FAVS.has(i)?FAVS.delete(i):FAVS.add(i); saveFavs(); syncFavUI(); return FAVS.has(i); }
+function renderFavorites(){
+  const wrap=document.getElementById('fav-cars'); if(!wrap) return;
+  const list=[...FAVS].map(i=>CARS[i]).filter(Boolean);
+  wrap.innerHTML=list.map(c=>carCard(c,true)).join('');
+  const emp=document.getElementById('fav-empty'); if(emp) emp.style.display=list.length?'none':'block';
+  const h=document.getElementById('fav-count-h'); if(h) h.textContent=list.length;
+}
+function syncFavUI(){
+  document.querySelectorAll('.car-card[data-car],[data-fav][data-car]').forEach(el=>{
+    const card=el.matches('[data-fav]')?el:el.querySelector('[data-fav]'); if(!card) return;
+    const i=+(el.dataset.car); const on=FAVS.has(i);
+    card.classList.toggle('on',on); const p=card.querySelector('path'); if(p) p.setAttribute('fill',on?'currentColor':'none');
+  });
+  document.querySelectorAll('[data-favbadge]').forEach(b=>b.textContent=FAVS.size);
+  renderFavorites();
+}
+
+function carCard(c, fav){
+  const save = isSale(c) ? c.o-c.p : 0;
+  return `<div class="car-card" data-car="${c._i}">
+    <div class="thumb">
+      ${save>0?`<div class="tag">Akce</div>`:`<div class="tag ghost">${c.y}</div>`}
+      <button class="fav${fav?' on':''}" data-fav><svg viewBox="0 0 24 24" fill="${fav?'currentColor':'none'}" stroke="currentColor"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg></button>
+      <img src="${c.img}" alt="${c.n}" loading="lazy"/>
+    </div>
+    <div class="body">
+      <h4>${c.n}</h4>
+      <div class="specs"><span>${c.y}</span><span>${c.f}</span><span>${c.g}</span><span>${c.w}</span><span>${c.k}</span></div>
+      <div class="priceline"><div class="price">${fmt(c.p)} <small>Kč</small></div>${save>0?`<div class="old">${fmt(c.o)}</div>`:""}</div>
+      ${save>0?`<div class="save">Ušetříte ${fmt(save)} Kč</div>`:""}
+      ${save>0?`<div class="loyal-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg>−5 % navíc pro věrné &amp; Platinum členy</div>`:""}
+    </div>
+  </div>`;
+}
+function recoRow(c){
+  return `<div class="alert" style="cursor:pointer" data-go="offer">
+    <div class="dot" style="width:58px;height:40px;border-radius:9px;overflow:hidden;background:#eef0f5;padding:0"><img src="${c.img}" style="width:100%;height:100%;object-fit:cover" alt=""/></div>
+    <div><b>${c.n}</b><span>${c.f} · ${c.w} · ${c.y}</span></div>
+    <time style="font-weight:800;color:var(--ink)">${fmt(c.p)} Kč</time>
+  </div>`;
+}
+
+const sales = CARS.filter(isSale).sort((a,b)=>(b.o-b.p)-(a.o-a.p));
+document.getElementById("home-cars").innerHTML = sales.slice(0,4).map(c=>carCard(c,FAVS.has(c._i))).join("");
+document.getElementById("reco-list").innerHTML = CARS.filter(c=>/toyota|lexus/i.test(c.b)&&/hybrid/i.test(c.f)).slice(0,3).map(recoRow).join("");
+const corolla = CARS.find(c=>/corolla/i.test(c.n)) || sales[0];
+if(corolla) document.getElementById("alert-car").textContent = corolla.n.split(/\s{2,}|·/)[0]+" · nyní "+fmt(corolla.p)+" Kč";
+document.getElementById("nav-count").textContent = CARS.length;
+document.getElementById("qa-count").textContent = CARS.length+" vozů skladem";
+
+const owned = [
+  {n:"Toyota C-HR 1.8 HEV", img:"images/toyota-c-hr-1-8-hev-limited-edition.jpeg", y:"2024", f:"Hybrid", g:"CVT", w:"103 kW", k:"28 640 km", p:639000, tag:"Aktivní", az:true,
+   body:"SUV / crossover", color:"Bílá perleť", plate:"4AB 7721", vin:"JTN••••••L2", owned:"od 06/2024",
+   desc:"Váš aktuální vůz. Koupeno nové v Autobondu ve výbavě Limited Edition s kompletní zárukou a plnou servisní historií v síti Autobond. Bez vážné nehody, prověřený původ CEBIA.",
+   incidents:[
+     {t:"Výměna brzdových destiček",d:"Leden 2026",tag:"Oprava",kind:"repair",p:"Přední náprava · 24 100 km · Toyota Ostrava",cost:"4 200 Kč"},
+     {t:"Výměna čelního skla",d:"Říjen 2025",tag:"Pojistná událost",kind:"accident",p:"Odlétnutý kamínek na D1 · hrazeno pojišťovnou",cost:"0 Kč"},
+   ]},
+  {n:"Toyota Corolla 1.8 HEV", img:"images/toyota-corolla-1-8-hev-style-zimni-pneu.jpeg", y:"2023", f:"Hybrid", g:"CVT", w:"103 kW", k:"41 200 km", p:560000, tag:"Prodáno",
+   body:"Hatchback", color:"Šedá metalíza", plate:"—", vin:"SB1••••••K9", owned:"2023 – 2026",
+   desc:"Předchozí vůz, vyměněný na protiúčet za C-HR. Spolehlivý hybrid, celý servis u autorizovaného partnera Toyota.",
+   incidents:[
+     {t:"Oprava zadního nárazníku",d:"Srpen 2024",tag:"Nehoda",kind:"accident",p:"Ťuknutí na parkovišti · nový nárazník + lak · z povinného ručení protistrany",cost:"12 400 Kč"},
+     {t:"Výměna rozvodového řemene",d:"Duben 2025",tag:"Oprava",kind:"repair",p:"Preventivní výměna · 35 000 km",cost:"6 900 Kč"},
+     {t:"Servisní prohlídka 30 000",d:"Únor 2025",tag:"Servis",kind:"service",p:"Toyota Ostrava · 30 100 km",cost:"3 200 Kč"},
+   ]},
+  {n:"KIA Stonic Spin 1.0 T-GDi", img:"images/kia-stonic-spin-1-0-t-gdi-6mt.jpeg", y:"2020", f:"Benzín", g:"Manuál", w:"74 kW", k:"78 600 km", p:320000, tag:"Prodáno",
+   body:"SUV / crossover", color:"Červená", plate:"—", vin:"U5Y••••••P3", owned:"2020 – 2023",
+   desc:"První vůz pořízený v Autobondu. Spolehlivé městské SUV, prodáno v dobrém stavu s kompletní doloženou historií.",
+   incidents:[
+     {t:"Oprava po krupobití",d:"Červen 2022",tag:"Pojistná událost",kind:"accident",p:"Promáčkliny kapoty a střechy · PDR bez lakování · z havarijního pojištění",cost:"0 Kč"},
+     {t:"Výměna spojky",d:"Září 2022",tag:"Oprava",kind:"repair",p:"64 000 km · běžné opotřebení",cost:"9 800 Kč"},
+   ]},
+];
+document.getElementById("owned-cars").innerHTML = owned.map((c,i)=>{
+  const acc=c.incidents.filter(x=>x.kind==='accident').length, rep=c.incidents.filter(x=>x.kind==='repair').length;
+  return `<div class="owned-row" data-owned="${i}">
+    <img src="${c.img}" alt="${c.n}" loading="lazy"/>
+    <div class="info">
+      <b>${c.n}</b>
+      <div class="specs2"><span class="chip">${c.y}</span><span class="chip">${c.f}</span><span class="chip">${c.g}</span><span class="chip">${c.w}</span><span class="chip">${c.k}</span></div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:9px">${c.owned} · ${acc}× nehoda · ${rep}× oprava</div>
+    </div>
+    <div class="r">
+      <div class="chip ${c.az?'blue':''}" style="margin-bottom:9px">${c.tag}</div>
+      <div class="disp" style="font-size:19px;font-weight:800">${fmt(c.p)} <small style="font-size:12px;color:var(--muted);font-family:var(--font);font-weight:500">Kč</small></div>
+      <div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:7px">Zobrazit detail →</div>
+    </div>
+  </div>`;
+}).join("");
+
+/* Offer filters — mobile.de style */
+const brandCounts = {};
+CARS.forEach(c=>brandCounts[c.b]=(brandCounts[c.b]||0)+1);
+const brandsSorted = Object.keys(brandCounts).sort((a,b)=>brandCounts[b]-brandCounts[a] || a.localeCompare(b,'cs'));
+const kmNum = c => { if(/nov|prod/i.test(c.k)) return 0; const m=(c.k||'').replace(/\s/g,'').match(/\d+/); return m?+m[0]:1e9; };
+const PAGE = 24;
+const OF = {brands:new Set(), pmin:0, pmax:1e12, year:0, fuels:new Set(), gears:new Set(), kmMax:1e12, sale:false, q:"", sort:"price-asc", shown:PAGE};
+
+/* build brand checkboxes */
+document.getElementById("fp-brands").innerHTML = brandsSorted.map(b=>
+  `<label class="ck"><input type="checkbox" value="${b}" data-f="brand"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg></span>${b}<span class="cnt">${brandCounts[b]}</span></label>`).join("");
+
+/* price / year / km selects */
+const priceSteps=[100000,200000,300000,400000,500000,600000,700000,800000,1000000,1500000,2000000,3000000];
+const czk=n=>n.toLocaleString('cs-CZ').replace(/,/g,' ');
+document.getElementById("fp-pmin").innerHTML = `<option value="0">Od</option>`+priceSteps.map(v=>`<option value="${v}">${czk(v)} Kč</option>`).join("");
+document.getElementById("fp-pmax").innerHTML = `<option value="1000000000000">Do</option>`+priceSteps.map(v=>`<option value="${v}">${czk(v)} Kč</option>`).join("");
+const years=[...new Set(CARS.map(c=>+c.y).filter(Boolean))].sort((a,b)=>b-a);
+document.getElementById("fp-year").innerHTML = `<option value="0">Libovolný</option>`+years.map(y=>`<option value="${y}">${y} a novější</option>`).join("");
+const kmSteps=[5000,20000,50000,80000,120000,180000];
+document.getElementById("fp-km").innerHTML = `<option value="1000000000000">Bez limitu</option>`+kmSteps.map(v=>`<option value="${v}">do ${czk(v)} km</option>`).join("");
+
+/* fuel / gear checkboxes (real values in data) */
+const fuelsAll=['Benzín','Hybrid','Nafta','Elektro'].filter(f=>CARS.some(c=>c.f===f));
+const gearsAll=['Automat','CVT','Manuál'].filter(g=>CARS.some(c=>c.g===g));
+const ckHtml=(v,f)=>`<label class="ck"><input type="checkbox" value="${v}" data-f="${f}"><span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg></span>${v}<span class="cnt">${CARS.filter(c=>c[f==='fuel'?'f':'g']===v).length}</span></label>`;
+document.getElementById("fp-fuel").innerHTML = fuelsAll.map(v=>ckHtml(v,'fuel')).join("");
+document.getElementById("fp-gear").innerHTML = gearsAll.map(v=>ckHtml(v,'gear')).join("");
+
+function offerList(){
+  let l = CARS;
+  if(OF.brands.size) l=l.filter(c=>OF.brands.has(c.b));
+  l=l.filter(c=>c.p>=OF.pmin && c.p<=OF.pmax);
+  if(OF.year) l=l.filter(c=>(+c.y||0)>=OF.year);
+  if(OF.fuels.size) l=l.filter(c=>OF.fuels.has(c.f));
+  if(OF.gears.size) l=l.filter(c=>OF.gears.has(c.g));
+  if(OF.kmMax<1e12) l=l.filter(c=>kmNum(c)<=OF.kmMax);
+  if(OF.sale) l=l.filter(isSale);
+  if(OF.q){const q=OF.q.toLowerCase();l=l.filter(c=>c.n.toLowerCase().includes(q)||c.b.toLowerCase().includes(q));}
+  const s=OF.sort;
+  l=[...l].sort((a,b)=> s==='price-asc'?a.p-b.p : s==='price-desc'?b.p-a.p : s==='year-desc'?((+b.y||0)-(+a.y||0))||a.p-b.p : s==='km-asc'?kmNum(a)-kmNum(b) : s==='save-desc'?((b.o?b.o-b.p:0)-(a.o?a.o-a.p:0)) : 0);
+  return l;
+}
+function renderOffer(){
+  const list = offerList();
+  const slice = list.slice(0, OF.shown);
+  document.getElementById("offer-cars").innerHTML = slice.length ? slice.map(c=>carCard(c,FAVS.has(c._i))).join("") : `<div class="empty" style="grid-column:1/-1">Žádné vozy neodpovídají filtru. Zkuste ubrat některé podmínky.</div>`;
+  document.getElementById("result-count").innerHTML = `<b>${list.length}</b> ${list.length===1?'vůz':(list.length>=2&&list.length<=4?'vozy':'vozů')} · zobrazeno ${slice.length}`;
+  document.getElementById("load-more").style.display = list.length>OF.shown ? "block":"none";
+}
+
+/* wire checkbox groups */
+document.getElementById("filter-panel").addEventListener("change",e=>{
+  const t=e.target; if(!t.matches('input[type=checkbox]')) return;
+  if(t.id==="fp-sale"){OF.sale=t.checked;}
+  else{
+    const f=t.dataset.f, set = f==='brand'?OF.brands : f==='fuel'?OF.fuels : OF.gears;
+    t.checked?set.add(t.value):set.delete(t.value);
+  }
+  OF.shown=PAGE; renderOffer();
+});
+const bind=(id,fn)=>document.getElementById(id).addEventListener("change",e=>{fn(e.target.value);OF.shown=PAGE;renderOffer();});
+bind("fp-pmin",v=>OF.pmin=+v); bind("fp-pmax",v=>OF.pmax=+v);
+bind("fp-year",v=>OF.year=+v); bind("fp-km",v=>OF.kmMax=+v);
+document.getElementById("sort").addEventListener("change",e=>{OF.sort=e.target.value;renderOffer();});
+document.getElementById("fp-reset").addEventListener("click",()=>{
+  OF.brands.clear();OF.fuels.clear();OF.gears.clear();OF.pmin=0;OF.pmax=1e12;OF.year=0;OF.kmMax=1e12;OF.sale=false;OF.shown=PAGE;
+  document.querySelectorAll("#filter-panel input[type=checkbox]").forEach(x=>x.checked=false);
+  document.querySelectorAll("#filter-panel select").forEach(s=>s.selectedIndex=0);
+  renderOffer();
+});
+document.getElementById("fp-toggle").addEventListener("click",()=>document.getElementById("filter-panel").classList.toggle("open"));
+document.getElementById("load-more").addEventListener("click",()=>{OF.shown+=PAGE*2; renderOffer();});
+document.getElementById("global-search").addEventListener("input",e=>{
+  OF.q=e.target.value; OF.shown=PAGE;
+  if(OF.q && !document.getElementById("v-offer").classList.contains("on")) go("offer");
+  renderOffer();
+});
+renderOffer();
+syncFavUI();
+updateMemberUI();
+
+/* donut — blue monochrome */
+const seg=[{v:39,c:"#0a1550"},{v:41,c:"#1a2ee6"},{v:20,c:"#8b96ff"}];
+let acc=0, stops=seg.map(s=>{const from=acc;acc+=s.v;return `${s.c} ${from}% ${acc}%`}).join(",");
+document.getElementById("donut").innerHTML =
+  `<div style="width:150px;height:150px;border-radius:50%;background:conic-gradient(${stops})"></div><div style="position:absolute;inset:18px;border-radius:50%;background:var(--paper)"></div><div class="center"><b>12 070 Kč</b><span>celkem / rok</span></div>`;
+
+/* docs */
+const docs=[["Kupní smlouva","PDF · 240 kB · 06/2026","file"],["Faktura – servisní prohlídka","PDF · 118 kB · 06/2026","file"],["Servisní knížka (digitální)","14 záznamů · vždy aktuální","book"],["Předávací protokol","PDF · 96 kB · 06/2026","file"],["Zelená karta","PDF · platnost 05/2028","shield"],["Záruční dokumentace Toyota","PDF · do 06/2036","shield"],["Technický průkaz (kopie)","PDF · 180 kB","file"],["Certifikát CEBIA / carVertical","PDF · prověřený původ","shield"]];
+const dIcon={file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/>',shield:'<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/>'};
+document.getElementById("docs-list").innerHTML = docs.map(d=>`<div class="doc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${dIcon[d[2]]}</svg></div><div><b>${d[0]}</b><span>${d[1]}</span></div><div class="dl"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg></div></div>`).join("");
+
+/* Services directory */
+const SICON={
+  star:'<path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/>',
+  wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/>',
+  sparkle:'<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z"/>',
+  tire:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/>',
+  shield:'<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/>',
+  swap:'<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  bolt:'<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .8-1 1.7"/><circle cx="12" cy="16.5" r="0.6" fill="currentColor"/>',
+  cart:'<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11h10l2-7H6"/>',
+  doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'
+};
+const TLAB={sub:['Předplatné','sub'],one:['Objednat','one'],lead:['Sjednat','lead']};
+const SERVICES=[
+  {cat:'Členství & předplatné',ic:'star',items:[['Garage+ členství','sub','garageplus'],['Detailing předplatné','sub','garageplus'],['Mytí flat-rate','sub','garageplus'],['Servisní plán (prepaid)','sub','garageplus'],['Pneuhotel','sub','garageplus'],['Prodloužená záruka','sub'],['Asistence Premium','sub']]},
+  {cat:'Servis & péče o vůz',ic:'wrench',items:[['Pravidelný servis','one','service'],['Výměna oleje','one','service'],['Brzdy & rozvody','one','service'],['Klimatizace','one','service'],['Diagnostika','one','service'],['Geometrie','one','service'],['Autosklo','lead'],['Pick-up & delivery','one'],['Náhradní vozidlo','one']]},
+  {cat:'Mytí & detailing',ic:'sparkle',items:[['Ruční mytí','one'],['Kompletní detailing','one'],['Keramická ochrana','one'],['Tepování interiéru','one'],['Renovace laku','one'],['Fólie & tónování','lead']]},
+  {cat:'Pneumatiky & sezónní',ic:'tire',items:[['Přezutí & uskladnění','one'],['Prodej pneu','lead'],['Kontrola dezénu','one'],['Dohuštění dusíkem','one']]},
+  {cat:'Pojištění & finance',ic:'shield',items:[['Povinné ručení','lead'],['Havarijní pojištění','lead'],['GAP & pojištění skel','lead'],['Financování / úvěr','lead'],['Leasing / operák','lead'],['Nahlásit pojistnou událost','one']]},
+  {cat:'Výkup, prodej & protiúčet',ic:'swap',items:[['Výkup vozu','lead','tradein'],['Protiúčet','lead','tradein'],['Konsignační prodej','lead'],['Prověření CEBIA','one'],['Sledování hodnoty vozu','one']]},
+  {cat:'EV & hybrid',ic:'bolt',items:[['Nabíjecí mapa','one','ev'],['Domácí wallbox','lead','ev'],['Kondice baterie','one','ev'],['Tarif nabíjení','sub','ev']]},
+  {cat:'Mobilita & asistence',ic:'help',items:[['Nouzová pomoc','one'],['Odtah vozu','one'],['Dálniční známka','one'],['Kniha jízd','sub'],['Parkovací kredit','one']]},
+  {cat:'Marketplace & dokumenty',ic:'cart',items:[['Originální díly','lead'],['Autokosmetika','lead'],['Nosiče & tažné','lead'],['Dárkové poukazy','one'],['Archiv dokumentů','one','docs']]}
+];
+const sroot=document.getElementById("services-root");
+if(sroot){
+  const chips = SERVICES.map((c,i)=>`<div class="fchip${i===0?' active':''}" data-cat="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${SICON[c.ic]}</svg>${c.cat} <span class="c">${c.items.length}</span></div>`).join("");
+  sroot.innerHTML = `<div class="swipe-wrap"><div class="filters swipe" id="svc-cats">${chips}</div></div><div class="service-grid" id="svc-grid"></div>`;
+  const grid=document.getElementById("svc-grid");
+  function renderCat(i){
+    const c=SERVICES[i];
+    grid.innerHTML = c.items.map(([name,type,goto])=>`
+      <div class="svc-tile"${goto?` data-go="${goto}"`:''}>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${SICON[c.ic]}</svg></div>
+        <b>${name}</b>
+        <span class="t ${TLAB[type][1]}">${TLAB[type][0]}</span>
+      </div>`).join("");
+  }
+  document.getElementById("svc-cats").addEventListener("click",e=>{
+    const f=e.target.closest(".fchip"); if(!f)return;
+    document.querySelectorAll("#svc-cats .fchip").forEach(x=>x.classList.remove("active")); f.classList.add("active");
+    renderCat(+f.dataset.cat);
+  });
+  renderCat(0);
+}
+
+/* Booking flow (Servis) */
+(function(){
+  const svc=document.getElementById("book-svc"); if(!svc) return;
+  let base=3480;
+  const priceEl=document.getElementById("book-price");
+  const extras=()=> [...document.querySelectorAll('#v-service [data-extra]:checked')].reduce((s,x)=>s+ +x.dataset.extra,0);
+  const upd=()=> priceEl.textContent = (base+extras()).toLocaleString('cs-CZ').replace(/,/g,' ')+" Kč";
+  svc.addEventListener("click",e=>{const f=e.target.closest(".fchip");if(!f)return;svc.querySelectorAll(".fchip").forEach(x=>x.classList.remove("active"));f.classList.add("active");base=+f.dataset.price;upd();});
+  const singleSel=id=>document.getElementById(id).addEventListener("click",e=>{const s=e.target.closest(".slot");if(!s)return;e.currentTarget.querySelectorAll(".slot").forEach(x=>x.classList.remove("sel"));s.classList.add("sel");});
+  singleSel("book-days"); singleSel("book-times");
+  document.getElementById("v-service").addEventListener("change",e=>{if(e.target.matches("[data-extra]"))upd();});
+  const cta=document.getElementById("book-cta");
+  cta.addEventListener("click",()=>{cta.innerHTML="✓ Termín rezervován";cta.style.background="var(--navy)";});
+})();
+
+/* ---- Car detail (mobile.de styl) ---- */
+const DEALER = {name:"Petr Dvořák", role:"prodejní poradce", tel:"+420 730 315 000"};
+function galleryImgs(c){
+  const ext=(c.img.match(/\.jpe?g$/i)||['.jpg'])[0];
+  const base=c.img.replace(/(-\d+)?\.jpe?g$/i,'');
+  const set=[c.img, base+ext]; for(let i=2;i<=6;i++) set.push(base+'-'+i+ext);
+  return [...new Set(set)];
+}
+function specRow(k,v){ return v?`<div class="spec-item"><span class="k">${k}</span><span class="v">${v}</span></div>`:''; }
+function renderCarDetail(c){
+  const save=isSale(c)?c.o-c.p:0;
+  const monthly=Math.max(1990, Math.round(c.p/180/10)*10);
+  const power=(c.w||'').replace(/\s*kW/i,' kW');
+  const imgs=galleryImgs(c);
+  const thumbs=imgs.map((src,i)=>`<img src="${src}" alt="" loading="lazy" data-thumb="${src}" class="${i===0?'sel':''}" onerror="this.remove();window.cdSync&&window.cdSync()" onload="window.cdSync&&window.cdSync()"/>`).join('');
+  const specs=[
+    ['Značka',c.b],['Model',c.n.replace(new RegExp('^'+c.b+'\\s*','i'),'').split(/\d/)[0].trim()||c.n],
+    ['Rok výroby',c.y],['Nájezd',c.k],['Palivo',c.f],['Převodovka',c.g],['Výkon',power],
+    ['Karoserie','SUV / crossover'],['Počet dveří','5'],['Emisní norma','Euro 6'],
+    ['První majitel','Ano'],['Původ','Česká republika'],['Stav','Prověřený vůz'],['Záruka','Autobond 24 měsíců']
+  ].map(([k,v])=>specRow(k,v)).join('');
+  const feats=['Klimatizace','Parkovací senzory','Apple CarPlay / Android Auto','LED světlomety','Tempomat','Vyhřívaná sedadla','Couvací kamera','Bezklíčové startování']
+    .map(f=>`<div class="chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>${f}</div>`).join('');
+  document.getElementById("car-detail").innerHTML=`
+    <div class="cd-top">
+      <div>
+        <div class="label">${c.b} · Prověřený vůz skladem</div>
+        <h2>${c.n}</h2>
+        <div class="chips"><div class="chip">${c.y}</div><div class="chip">${c.f}</div><div class="chip">${c.g}</div><div class="chip">${power}</div><div class="chip">${c.k}</div></div>
+      </div>
+    </div>
+    <div class="cd-layout">
+      <div>
+        <div class="cd-gallery">
+          ${save>0?`<div class="tag">Akce − ${fmt(save)} Kč</div>`:''}
+          <button class="cd-fav${FAVS.has(c._i)?' on':''}" data-fav data-car="${c._i}" aria-label="Uložit do oblíbených"><svg viewBox="0 0 24 24" fill="${FAVS.has(c._i)?'currentColor':'none'}" stroke="currentColor"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg></button>
+          <img class="main" id="cd-main" src="${c.img}" alt="${c.n}"/>
+          <span class="cnt" id="cd-cnt">1 / ${imgs.length}</span>
+        </div>
+        <div class="cd-thumbs" id="cd-thumbs">${thumbs}</div>
+        <div class="card" style="padding:24px;margin-top:20px">
+          <div class="donut-head"><h3 style="font-size:17px">Technická data</h3><div class="chip dark">${c.b}</div></div>
+          <div class="spec-list">${specs}</div>
+        </div>
+        <div class="card" style="padding:24px;margin-top:16px">
+          <div class="donut-head"><h3 style="font-size:17px">Výbava &amp; popis</h3></div>
+          <p style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-bottom:16px">Prověřený vůz ${c.n} z nabídky Autobond. Kompletní servisní historie, garantovaný původ (CEBIA) a záruka Autobond. Možnost financování i protiúčtu vašeho stávajícího vozu.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${feats}</div>
+        </div>
+      </div>
+      <aside class="cd-side">
+        <div class="card cd-pricebox">
+          ${save>0?`<span class="old">${fmt(c.o)} Kč</span>`:''}
+          <div class="price">${fmt(c.p)} Kč</div>
+          <div class="fin">Financování od <b>${fmt(monthly)} Kč</b> / měsíc · akontace 20 %</div>
+          ${save>0?`<div class="memberdeal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg><span>−5 % navíc pro dlouholeté zákazníky a členy Autobond Platinum · <b>${fmt(Math.round(c.p*0.95))} Kč</b></span></div>`:''}
+          <div class="cd-cta">
+            <a class="btn-primary" href="tel:${DEALER.tel.replace(/\s/g,'')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>Zavolat prodejci</a>
+            <button class="btn-ghost" data-go="tradein"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:6px"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Výkup / protiúčet na tento vůz</button>
+            <button class="btn-primary" style="background:var(--ink)">Rezervovat online</button>
+          </div>
+          <div class="dealer">
+            <div class="av">AB</div>
+            <div><b>Autobond ${c.b}</b><span>${DEALER.name} · ${DEALER.role}</span></div>
+          </div>
+        </div>
+        <div class="card" style="padding:18px">
+          <div class="svc-list">
+            <div class="svc" style="padding:11px 0"><div class="n"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div><div><b style="font-size:13.5px">Prověřený původ</b><span style="font-size:12px;color:var(--muted)">Certifikát CEBIA / carVertical</span></div></div>
+            <div class="svc" style="padding:11px 0"><div class="n"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M7 15h4"/><rect x="3" y="6" width="18" height="12" rx="2"/></svg></div><div><b style="font-size:13.5px">Financování na míru</b><span style="font-size:12px;color:var(--muted)">Schválení do 15 minut</span></div></div>
+            <div class="svc" style="padding:11px 0;border-bottom:0"><div class="n"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg></div><div><b style="font-size:13.5px">Výkup vašeho vozu</b><span style="font-size:12px;color:var(--muted)">Orientační cena hned online</span></div></div>
+          </div>
+        </div>
+      </aside>
+    </div>`;
+  const main=document.getElementById("cd-main"), cnt=document.getElementById("cd-cnt");
+  window.cdSync=()=>{ const all=[...document.querySelectorAll("#cd-thumbs img")]; const sel=document.querySelector("#cd-thumbs img.sel")||all[0]; cnt.textContent=(Math.max(0,all.indexOf(sel))+1)+" / "+all.length; };
+  window.cdSync();
+  document.getElementById("cd-thumbs").addEventListener("click",e=>{
+    const t=e.target.closest("[data-thumb]"); if(!t)return;
+    main.src=t.dataset.thumb;
+    document.querySelectorAll("#cd-thumbs img").forEach(x=>x.classList.remove("sel")); t.classList.add("sel");
+    window.cdSync();
+  });
+}
+function openCar(i){ const c=CARS[i]; if(!c)return; renderCarDetail(c); go("car"); }
+
+/* Detail vozu z HISTORIE (parametry + popis + nehody & opravy) */
+const INC_ICON={accident:'<path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6A2 2 0 0 0 22 18L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',repair:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/>',service:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'};
+function renderOwnedDetail(o){
+  const specs=[['Značka & model',o.n],['Rok výroby',o.y],['Nájezd',o.k],['Palivo',o.f],['Převodovka',o.g],['Výkon',o.w],['Karoserie',o.body],['Barva',o.color],['SPZ',o.plate],['VIN',o.vin],['Ve vlastnictví',o.owned],['Stav',o.tag]].map(([k,v])=>specRow(k,v)).join('');
+  const acc=o.incidents.filter(x=>x.kind==='accident').length, rep=o.incidents.filter(x=>x.kind!=='accident').length;
+  const inc=o.incidents.map(x=>`<div class="tl-item"><div class="tl-dot"${x.kind==='accident'?' style="background:var(--blue);border-color:var(--blue);color:#fff"':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${INC_ICON[x.kind]||INC_ICON.repair}</svg></div><div class="tl-body"><div class="tl-main"><div class="d">${x.d} · ${x.tag}</div><b>${x.t}</b><p>${x.p}</p></div><div class="tl-cost${x.cost==='0 Kč'?' free':''}">${x.cost}</div></div></div>`).join('');
+  document.getElementById("car-detail").innerHTML=`
+    <div class="cd-top"><div><div class="label">Moje auta · ${o.tag}</div><h2>${o.n}</h2><div class="chips"><div class="chip">${o.y}</div><div class="chip">${o.f}</div><div class="chip">${o.g}</div><div class="chip">${o.w}</div><div class="chip">${o.k}</div></div></div></div>
+    <div class="cd-layout">
+      <div>
+        <div class="cd-gallery"><img class="main" src="${o.img}" alt="${o.n}"/><span class="cnt">${o.owned}</span></div>
+        <div class="card" style="padding:24px;margin-top:20px"><div class="donut-head"><h3 style="font-size:17px">Technická data</h3><div class="chip dark">${o.plate}</div></div><div class="spec-list">${specs}</div></div>
+        <div class="card" style="padding:24px;margin-top:16px"><div class="donut-head"><h3 style="font-size:17px">Popis</h3></div><p style="font-size:13.5px;color:var(--muted);line-height:1.6">${o.desc}</p></div>
+        <div class="card" style="padding:24px;margin-top:16px">
+          <div class="donut-head"><h3 style="font-size:17px">Nehody &amp; opravy</h3><div class="chip">${acc}× nehoda · ${rep}× oprava/servis</div></div>
+          ${o.incidents.length?`<div class="timeline">${inc}</div>`:`<p style="font-size:13px;color:var(--muted)">Čistá historie — žádné nehody ani opravy.</p>`}
+        </div>
+      </div>
+      <aside class="cd-side">
+        <div class="card cd-pricebox">
+          <div class="eyebrow-sm">${o.az?'Aktuální odhad hodnoty':'Prodáno za'}</div>
+          <div class="price">${fmt(o.p)} Kč</div>
+          <div class="fin">Ve vlastnictví ${o.owned}</div>
+          <div class="cd-cta">
+            <button class="btn-primary" data-go="history">Kompletní historie vozu</button>
+            ${o.az?`<button class="btn-ghost" data-go="tradein">Nechat vykoupit / protiúčet</button><button class="btn-ghost" data-go="service">Objednat servis</button>`:''}
+          </div>
+        </div>
+        <div class="card" style="padding:18px"><div class="svc-list">
+          <div class="svc" style="padding:11px 0"><div class="n">${acc}</div><div><b style="font-size:13.5px">Nehody / poj. události</b><span style="font-size:12px;color:var(--muted)">vše doložené a opravené</span></div></div>
+          <div class="svc" style="padding:11px 0;border-bottom:0"><div class="n">${rep}</div><div><b style="font-size:13.5px">Opravy &amp; servis</b><span style="font-size:12px;color:var(--muted)">kompletní servisní historie</span></div></div>
+        </div></div>
+      </aside>
+    </div>`;
+}
+function openOwned(i){ const o=owned[i]; if(!o)return; renderOwnedDetail(o); go("car"); }
+
+/* ---- EV: reálná mapa nabíječek + geolokace ---- */
+let evMap=null, evReady=false;
+function evKm(a,b){const R=6371,r=x=>x*Math.PI/180;const dLat=r(b[0]-a[0]),dLon=r(b[1]-a[1]);const s=Math.sin(dLat/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(s)));}
+function initEvMap(){
+  const el=document.getElementById("ev-map"); if(!el) return;
+  if(typeof L==="undefined"){ el.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Mapu se nepodařilo načíst (chybí připojení k internetu).</div>'; return; }
+  if(!evMap){
+    evMap=L.map(el,{attributionControl:false,zoomControl:true}).setView([50.0755,14.4378],13);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:20}).addTo(evMap);
+  }
+  setTimeout(()=>evMap.invalidateSize(),80);
+  if(evReady) return; evReady=true;
+  const use=(lat,lon,label)=>evLoad(lat,lon,label);
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      p=>use(p.coords.latitude,p.coords.longitude,"Vaše poloha"),
+      ()=>use(50.0755,14.4378,"Praha (přibližná poloha)"),
+      {timeout:8000,maximumAge:600000}
+    );
+  } else use(50.0755,14.4378,"Praha (přibližná poloha)");
+}
+function evLoad(lat,lon,label){
+  evMap.setView([lat,lon],14);
+  const meIcon=L.divIcon({className:"",html:'<div class="mappin me"></div>',iconSize:[20,20],iconAnchor:[10,10]});
+  L.marker([lat,lon],{icon:meIcon}).addTo(evMap).bindPopup(label);
+  L.circle([lat,lon],{radius:4000,color:"#1a2ee6",weight:1,fillColor:"#1a2ee6",fillOpacity:.05}).addTo(evMap);
+  const listEl=document.getElementById("ev-charger-list");
+  if(listEl) listEl.innerHTML='<div style="padding:14px 2px;color:var(--muted);font-size:13px">Hledám nabíječky v okolí…</div>';
+  const q=`[out:json][timeout:25];node["amenity"="charging_station"](around:4000,${lat},${lon});out body 80;`;
+  fetch("https://overpass-api.de/api/interpreter",{method:"POST",body:"data="+encodeURIComponent(q)})
+    .then(r=>r.json()).then(d=>{
+      const cIcon=L.divIcon({className:"",html:'<div class="mappin"><svg viewBox="0 0 24 24" fill="#fff" width="12" height="12"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div>',iconSize:[28,28],iconAnchor:[14,28],popupAnchor:[0,-26]});
+      const list=(d.elements||[]).filter(e=>e.lat&&e.lon).map(e=>({lat:e.lat,lon:e.lon,t:e.tags||{},km:evKm([lat,lon],[e.lat,e.lon])})).sort((a,b)=>a.km-b.km).slice(0,14);
+      list.forEach(c=>{
+        const nm=c.t.name||c.t.operator||c.t.network||"Nabíjecí stanice";
+        L.marker([c.lat,c.lon],{icon:cIcon}).addTo(evMap).bindPopup(`<b>${nm}</b><br>${c.km.toFixed(1)} km`);
+      });
+      const chip=document.getElementById("ev-count"); if(chip) chip.textContent=list.length?`${list.length} v okolí 4 km`:"žádné do 4 km";
+      if(listEl) listEl.innerHTML = list.length ? list.map(c=>{
+        const nm=c.t.name||c.t.operator||c.t.network||"Nabíjecí stanice";
+        const dc=/ccs|chademo|type2_combo|dc/i.test(JSON.stringify(c.t))?"DC rychlonabíjení":"AC nabíjení";
+        const info=[c.t.operator&&c.t.operator!==nm?c.t.operator:"",dc,`${c.km.toFixed(1)} km`].filter(Boolean).join(" · ");
+        return `<div class="svc"><div class="n"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div><div><b>${nm}</b><span>${info}</span></div><div class="money"><a href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}" target="_blank" style="color:var(--blue);font-weight:700;text-decoration:none">Navigovat</a></div></div>`;
+      }).join("") : '<div style="padding:14px 2px;color:var(--muted);font-size:13px">V okruhu 4 km jsme nenašli nabíječky.</div>';
+    })
+    .catch(()=>{ if(listEl) listEl.innerHTML='<div style="padding:14px 2px;color:var(--muted);font-size:13px">Nabíječky se nepodařilo načíst (offline?).</div>'; });
+}
+
+/* ---- Garage+ : proces po výběru plánu (přehled → platba → aktivace) ---- */
+const PLANS={
+  silver:{name:"Silver",price:990,feats:["Mytí vozu 1× měsíčně","10 % sleva na servis a díly","Digitální servisní knížka","Přednostní online termíny","Připomínky STK, pojištění, servisu"]},
+  gold:{name:"Gold",price:2490,feats:["Vše ze Silver","Detailing 4× ročně","20 % sleva na servis a díly","Náhradní vůz při servisu zdarma","Sezónní přezutí + uskladnění pneu","Asistenční služba 24/7"]},
+  platinum:{name:"Platinum",price:5290,feats:["Vše z Gold","Neomezené mytí vozu","Kompletní servisní plán v ceně","Prodloužená záruka","Pick-up & delivery vozu","Osobní concierge poradce"]}
+};
+const CHK={tier:null,cycle:"month",method:"card"};
+const planTotal=()=>{const p=PLANS[CHK.tier];return CHK.cycle==="year"?p.price*10:p.price;};
+function openPlan(t){if(!PLANS[t])return;CHK.tier=t;CHK.cycle="month";CHK.method="card";renderPlanStep(1);document.getElementById("plan-modal").classList.add("open");}
+function closePlan(){document.getElementById("plan-modal").classList.remove("open");}
+function updateMemberUI(){const pl=localStorage.getItem("mg_plan");if(!pl)return;const t="Garage+ "+pl+" · aktivní";const s=document.querySelector(".side-user span");if(s)s.textContent=t;const ps=document.querySelector("#pop-user .ph span");if(ps)ps.textContent=t;}
+const _ck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>';
+function renderPlanStep(step){
+  const p=PLANS[CHK.tier],body=document.getElementById("plan-body");
+  [...document.getElementById("plan-steps").children].forEach((el,i)=>{el.className="st"+(i+1<step?" done":i+1===step?" active":"");});
+  if(step===1){
+    body.innerHTML=`
+      <h3 style="font-size:21px;font-weight:800;margin-bottom:3px">Garage+ ${p.name}</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Aktivace okamžitě, bez závazku — kdykoli zrušitelné.</p>
+      ${p.feats.map(f=>`<div class="feat">${_ck}${f}</div>`).join("")}
+      <div class="cycle">
+        <div class="c ${CHK.cycle==="month"?"sel":""}" data-act="cycle" data-v="month"><b>Měsíčně</b><span>${fmt(p.price)} Kč / měsíc</span></div>
+        <div class="c ${CHK.cycle==="year"?"sel":""}" data-act="cycle" data-v="year"><b>Ročně · 2 měsíce zdarma</b><span>${fmt(p.price*10)} Kč / rok</span></div>
+      </div>
+      <div class="book-total" style="margin-top:14px">
+        <div><div class="t">Platba dnes</div><div class="p">${fmt(planTotal())} Kč</div></div>
+        <button class="btn-primary" data-act="to2">Pokračovat k platbě <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+      </div>`;
+  } else if(step===2){
+    const card=`<div class="field"><label>Číslo karty</label><input inputmode="numeric" placeholder="1234 5678 9012 3456" value="4242 4242 4242 4242"></div><div class="frow"><div class="field"><label>Platnost</label><input placeholder="MM/RR" value="09/28"></div><div class="field"><label>CVC</label><input placeholder="123" value="123"></div></div>`;
+    const apple=`<div style="text-align:center;padding:18px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;font-size:14px;font-weight:600"> Pay — potvrdíte klepnutím na tlačítko níže.</div>`;
+    const bank=`<div style="padding:16px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;font-size:13px;color:#42495c;line-height:1.6">Zašleme vám zálohovou fakturu na e-mail.<br>Účet <b>2100123456 / 2010</b> · variabilní symbol bude v e-mailu.</div>`;
+    body.innerHTML=`
+      <h3 style="font-size:21px;font-weight:800;margin-bottom:3px">Platba</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Garage+ ${p.name} · ${CHK.cycle==="year"?"roční":"měsíční"} · <b style="color:var(--ink)">${fmt(planTotal())} Kč</b></p>
+      <div class="pay-methods">
+        <div class="pay-m ${CHK.method==="card"?"sel":""}" data-act="method" data-v="card">Karta</div>
+        <div class="pay-m ${CHK.method==="apple"?"sel":""}" data-act="method" data-v="apple">Apple Pay</div>
+        <div class="pay-m ${CHK.method==="bank"?"sel":""}" data-act="method" data-v="bank">Převod</div>
+      </div>
+      ${CHK.method==="card"?card:CHK.method==="apple"?apple:bank}
+      <div class="field"><label>E-mail pro doklad</label><input type="email" value="matej.novak@email.cz"></div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn-ghost" data-act="to1">Zpět</button>
+        <button class="btn-primary" data-act="pay" style="flex:1;justify-content:center">Zaplatit ${fmt(planTotal())} Kč a aktivovat</button>
+      </div>`;
+  } else {
+    localStorage.setItem("mg_plan",p.name); updateMemberUI();
+    body.innerHTML=`
+      <div style="text-align:center">
+        <div style="width:58px;height:58px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;margin:0 auto 14px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h3 style="font-size:22px;font-weight:800;margin-bottom:6px">Vítejte v Garage+ ${p.name}!</h3>
+        <p style="font-size:13.5px;color:var(--muted);max-width:410px;margin:0 auto 18px;line-height:1.5">Členství je aktivní a všechny výhody můžete čerpat okamžitě.</p>
+      </div>
+      <div class="member-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1">
+          <div><div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.85">Garage+ ${p.name}</div><b style="font-size:18px;font-family:var(--disp)">Matěj Novák</b></div>
+          <div style="font-family:var(--disp);font-weight:800;font-size:15px">MG</div>
+        </div>
+        <div style="margin-top:28px;display:flex;justify-content:space-between;font-size:12px;opacity:.92;position:relative;z-index:1"><span>Člen od dnes</span><span>${fmt(planTotal())} Kč / ${CHK.cycle==="year"?"rok":"měs"}</span></div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin-bottom:16px;font-size:13px;color:#42495c">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-2)"><span>První platba</span><b style="color:var(--ink)">Dnes · ${fmt(planTotal())} Kč</b></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-2)"><span>Další platba</span><b style="color:var(--ink)">${CHK.cycle==="year"?"za 12 měsíců":"za 1 měsíc"}</b></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0"><span>Výhody &amp; slevy</span><b style="color:var(--blue)">Aktivní ✓</b></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5">Potvrzení jsme poslali na e-mail, digitální kartu najdete ve svém profilu a slevy se automaticky uplatní při servisu, mytí i nákupu dílů.</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn-ghost" data-act="close">Zavřít</button>
+        <button class="btn-primary" data-act="finish" data-target="garage" style="flex:1;justify-content:center">Přejít do Moje auta</button>
+      </div>`;
+  }
+}
+document.getElementById("plan-modal").addEventListener("click",e=>{
+  if(e.target.id==="plan-modal"){closePlan();return;}
+  const a=e.target.closest("[data-act]"); if(!a)return;
+  const act=a.dataset.act;
+  if(act==="close")closePlan();
+  else if(act==="cycle"){CHK.cycle=a.dataset.v;renderPlanStep(1);}
+  else if(act==="method"){CHK.method=a.dataset.v;renderPlanStep(2);}
+  else if(act==="to2")renderPlanStep(2);
+  else if(act==="to1")renderPlanStep(1);
+  else if(act==="pay"){a.textContent="Zpracování platby…";a.style.opacity=".7";setTimeout(()=>renderPlanStep(3),1000);}
+  else if(act==="finish"){closePlan();go(a.dataset.target||"garage");}
+});
+
+/* router + back history */
+let navStack=[], current="home";
+function setView(view){
+  const el=document.getElementById("v-"+view); if(!el) return false;
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  el.classList.add("on");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.go===view));
+  document.querySelectorAll(".bn").forEach(n=>n.classList.toggle("active",n.dataset.go===view));
+  window.scrollTo({top:0,behavior:"smooth"});
+  if(view==="ev") setTimeout(initEvMap,80);
+  return true;
+}
+function go(view){
+  if(view===current) return;
+  if(setView(view)){ navStack.push(current); current=view; updateBack(); }
+}
+function goBack(){ if(navStack.length){ const v=navStack.pop(); if(setView(v)) current=v; updateBack(); } }
+function updateBack(){ document.querySelectorAll(".backbtn").forEach(b=>b.style.display = navStack.length ? "grid" : "none"); }
+document.addEventListener("click",e=>{
+  if(e.target.closest(".backbtn")){goBack();return;}
+  if(e.target.closest("[data-fav]")){
+    e.stopPropagation();
+    const b=e.target.closest("[data-fav]"); const host=b.closest("[data-car]");
+    if(host){ toggleFav(+host.dataset.car); }
+    else { b.classList.toggle("on"); const p=b.querySelector("path"); if(p)p.setAttribute("fill",b.classList.contains("on")?"currentColor":"none"); }
+    return;
+  }
+  const pl=e.target.closest("[data-plan]"); if(pl){openPlan(pl.dataset.plan);return;}
+  const ow=e.target.closest("[data-owned]"); if(ow){openOwned(+ow.dataset.owned);return;}
+  const dc=e.target.closest("[data-car]"); if(dc){openCar(+dc.dataset.car);return;}
+  const fv=e.target.closest(".finvar"); if(fv){fv.parentElement.querySelectorAll(".finvar").forEach(x=>x.classList.remove("sel"));fv.classList.add("sel");return;}
+  const t=e.target.closest("[data-go]"); if(t){go(t.dataset.go);return;}
+  const tb=e.target.closest(".tab"); if(tb){
+    tb.parentElement.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));tb.classList.add("active");
+    const panel=tb.dataset.tab;
+    if(panel){const scope=tb.closest(".view")||document;scope.querySelectorAll(".tabpanel").forEach(p=>p.style.display=p.dataset.panel===panel?"":"none");}
+    return;
+  }
+});
+/* Výkup: "Prohlédnout vůz" otevře detail BAIC BJ30 */
+(function(){
+  const btn=document.getElementById("tradein-view"); if(!btn) return;
+  const baic=CARS.find(c=>/bj30/i.test(c.n)&&/4x4|4×4/i.test(c.n)) || CARS.find(c=>/bj30/i.test(c.n));
+  if(baic) btn.addEventListener("click",()=>openCar(baic._i)); else btn.setAttribute("data-go","offer");
+})();
+
+/* Výkup: focení vozu ze všech úhlů → odeslat → čekání na prodejce */
+(function(){
+  const grid=document.getElementById("shoot-grid"); if(!grid) return;
+  const angles=['Přední ¾','Zadní ¾','Levý bok','Pravý bok','Interiér – palubka','Interiér – sedadla','Stav tachometru','Motorový prostor','Poškození (detail)'];
+  const carPlus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 13l1.5-4.5A2 2 0 0 1 7.4 7h6.2a2 2 0 0 1 1.9 1.5L17 13v5h-2v-2H6v2H4z"/><circle cx="8" cy="15" r="1"/><circle cx="14" cy="15" r="1"/><circle cx="18.6" cy="6.4" r="3.7" fill="#1a2ee6" stroke="none"/><path d="M18.6 4.7v3.4M16.9 6.4h3.4" stroke="#fff" stroke-width="1.5"/></svg>';
+  grid.innerHTML=angles.map((a,i)=>`<label class="shoot-tile" data-i="${i}">
+      <span class="cic">${carPlus}</span>
+      <b>${a}</b>
+      <span class="lab-ovl">${a}</span>
+      <span class="badge-ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <input type="file" accept="image/*" capture="environment" style="display:none"/>
+    </label>`).join("");
+  const countEl=document.getElementById("shoot-count"), filled=new Set();
+  grid.addEventListener("change",e=>{
+    const inp=e.target; if(inp.type!=="file"||!inp.files||!inp.files[0]) return;
+    const tile=inp.closest(".shoot-tile"), rd=new FileReader();
+    rd.onload=()=>{ let img=tile.querySelector("img.prev"); if(!img){img=document.createElement("img");img.className="prev";tile.insertBefore(img,tile.firstChild);} img.src=rd.result; tile.classList.add("filled"); filled.add(+tile.dataset.i); countEl.textContent=filled.size; };
+    rd.readAsDataURL(inp.files[0]);
+  });
+  const send=document.getElementById("shoot-send"), orig=send.innerHTML;
+  send.addEventListener("click",()=>{
+    if(!filled.size){ send.textContent="Nahrajte alespoň 1 fotku"; setTimeout(()=>send.innerHTML=orig,1600); return; }
+    const w=document.getElementById("shoot-waiting"); w.querySelector("[data-sent]").textContent=filled.size;
+    document.getElementById("shoot-card").style.display="none"; w.style.display="block";
+    w.scrollIntoView({behavior:"smooth",block:"center"});
+  });
+})();
+
+/* Horní ikony: zvonek + účet popovery */
+(function(){
+  const bell=document.getElementById("btn-bell"), user=document.getElementById("btn-user");
+  const pBell=document.getElementById("pop-bell"), pUser=document.getElementById("pop-user");
+  if(!pBell||!pUser) return;
+  const close=()=>{pBell.classList.remove("open");pUser.classList.remove("open");};
+  const toggle=pop=>{const open=!pop.classList.contains("open");close();if(open)pop.classList.add("open");};
+  bell&&bell.addEventListener("click",e=>{e.stopPropagation();toggle(pBell);});
+  user&&user.addEventListener("click",e=>{e.stopPropagation();toggle(pUser);});
+  document.addEventListener("click",e=>{if(!e.target.closest(".pop")&&!e.target.closest("#btn-bell")&&!e.target.closest("#btn-user"))close();});
+  [pBell,pUser].forEach(p=>p.addEventListener("click",()=>setTimeout(close,0)));
+})();
+</script>
+</body>
+</html>

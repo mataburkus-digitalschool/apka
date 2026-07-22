@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Autobond — IG feed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  /* ============ DESIGN TOKENS ============ */
+  :root{
+    --paper:#ffffff; --ink:#0c1220; --muted:#6b7180; --line:#e7e9f0; --line-2:#eef0f5; --chip:#f4f5f9;
+    --blue:#1a2ee6; --blue-2:#3a5bff; --navy:#1b2c50; --navy-d:#101a33; --slate:#c2c8dc; --gold:#e9b949;
+    --r:12px;            /* jednotné zaoblení prvků */
+    --pad:24px;          /* jednotný vnitřní okraj postu */
+    --disp:"Titillium Web",system-ui,sans-serif; --font:"Titillium Web",system-ui,-apple-system,sans-serif; --serif:"Instrument Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:#e9ebf1;color:var(--ink);-webkit-font-smoothing:antialiased;padding:34px 16px 60px}
+  .wrap{max-width:975px;margin:0 auto}
+  .disp{font-family:var(--disp);letter-spacing:-.02em}
+
+  /* ============ PROFIL ============ */
+  .sheet{background:var(--paper);border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 40px 80px -50px rgba(27,44,80,.5)}
+  .prof{display:flex;gap:34px;align-items:center;padding:34px 40px}
+  .avatar{width:150px;height:150px;border-radius:50%;flex:none;background:radial-gradient(circle at 30% 30%,var(--blue-2),var(--navy) 72%);display:grid;place-items:center;color:#fff;position:relative;box-shadow:0 0 0 4px #fff,0 0 0 6px var(--line)}
+  .avatar b{font-family:var(--disp);font-weight:900;font-size:46px}
+  .pinfo{flex:1;min-width:0}
+  .prow{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+  .handle{font-size:22px;font-weight:400}.handle b{font-weight:700}
+  .followbtn{background:var(--blue);color:#fff;border:0;border-radius:30px;padding:10px 24px;font-family:var(--font);font-weight:700;font-size:13px;cursor:pointer}
+  .msgbtn{background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:30px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer}
+  .stats{display:flex;gap:34px;margin-bottom:16px;font-size:15px}.stats b{font-family:var(--disp);font-weight:700}
+  .bio{font-size:14.5px;line-height:1.5;max-width:450px}.bio .name{font-weight:700}.bio .ac{color:var(--blue);font-style:normal;font-weight:600;font-size:14.5px}.bio a{color:var(--blue);text-decoration:none;font-weight:600}
+  .highs{display:flex;gap:24px;padding:6px 40px 40px}
+  .high{display:flex;flex-direction:column;align-items:center;gap:10px;width:82px}
+  .high .ring{width:66px;height:66px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;background:var(--chip);color:var(--blue)}
+  .high .ring svg{width:26px;height:26px;stroke-width:1.6;fill:none;stroke:currentColor}
+  .high span{font-size:11px;color:var(--ink);font-weight:600;white-space:nowrap}
+  .tabs{display:flex;justify-content:center;gap:60px;border-top:1px solid var(--line)}
+  .tab{display:flex;align-items:center;gap:7px;padding:16px 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);border-top:1px solid transparent;margin-top:-1px}
+  .tab.on{color:var(--ink);border-top:1px solid var(--ink)}
+  .tab svg{width:13px;height:13px;stroke-width:2;fill:none;stroke:currentColor}
+
+  /* ============ GRID ============ */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:5px;background:var(--line-2)}
+
+  /* ---- BASE POST (jednotná kostra: brand → nadpis → patička) ---- */
+  .post{position:relative;aspect-ratio:1/1;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:var(--pad);gap:12px}
+  .post>*{position:relative;z-index:1}
+
+  /* BRAND značka — na KAŽDÉM postu, jednotná */
+  .brand{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+  .brand .m{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-family:var(--disp);font-weight:900;font-size:14px;letter-spacing:0;flex:none}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  /* corner-marky (signatura apky) */
+  .cm{position:absolute;width:16px;height:16px;z-index:2}
+  .cm.tr{border-top:1.5px solid;border-right:1.5px solid;right:15px;top:15px}
+  .cm.bl{border-bottom:1.5px solid;border-left:1.5px solid;left:15px;bottom:15px}
+  .t-navy .cm,.t-blue .cm{border-color:rgba(255,255,255,.5)}
+  .t-light .cm{border-color:var(--slate)}
+
+  /* jednotná typografie */
+  .ey{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+  .head{font-family:var(--disp);font-weight:700;font-size:40px;line-height:1.0;letter-spacing:-.02em;text-wrap:balance;hyphens:none}
+  .head .ac{font-family:var(--font);color:var(--blue);font-style:normal;font-weight:600;font-size:1em;letter-spacing:-.01em}
+  .t-navy .head .ac,.t-blue .head .ac{color:#fff}
+  .head.lg{font-size:84px;line-height:.84;letter-spacing:-.035em}
+  .head.caps{text-transform:uppercase;font-weight:700;line-height:.98;font-size:33px}
+
+  /* jednotné tlačítko / pill */
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.02em;height:30px;padding:0 16px;border-radius:30px;width:fit-content}
+  .pill svg{width:15px;height:15px;stroke-width:2.2;fill:none;stroke:currentColor}
+  .pill.solid{background:var(--blue);color:#fff}
+  .pill.light{background:#fff;color:var(--navy)}
+  .tag{display:inline-flex;align-items:center;height:30px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:0 14px;border-radius:30px;background:var(--blue);color:#fff}
+  .price{display:inline-flex;align-items:center;height:30px;font-family:var(--disp);font-weight:700;font-size:15px;padding:0 14px;border-radius:30px;background:rgba(255,255,255,.95);color:var(--navy)}
+
+  /* ---- TÉMATA (jednotné barvy) ---- */
+  .t-light{background:var(--paper);color:var(--ink)}
+  .t-light .brand{color:var(--navy)} .t-light .brand .m{background:var(--navy);color:#fff}
+  .t-light .ey{color:var(--muted)} .t-light .ey.b{color:var(--blue)}
+  .t-light .lines{position:absolute;inset:0;z-index:0;opacity:.5;background-image:linear-gradient(var(--line-2) 1px,transparent 1px),linear-gradient(90deg,var(--line-2) 1px,transparent 1px);background-size:34px 34px}
+
+  .t-navy{color:#fff;background:radial-gradient(130% 130% at 82% 0%,var(--blue-2) 0%,var(--blue) 32%,var(--navy) 76%,var(--navy-d) 100%)}
+  .t-blue{color:#fff;background:linear-gradient(150deg,var(--blue-2),var(--blue) 55%,var(--navy))}
+  .t-navy .brand,.t-blue .brand{color:#fff} .t-navy .brand .m,.t-blue .brand .m{background:#fff;color:var(--navy)}
+  .t-navy .ey,.t-blue .ey{color:rgba(255,255,255,.82)}
+  .t-navy .head .ac,.t-blue .head .ac{color:#fff}
+
+  /* ---- FOTO POST (jednotné: brand vlevo nahoře, cena vpravo, model dole) ---- */
+  .photo{padding:0;display:block}
+  .photo img{width:100%;height:100%;object-fit:cover;transition:.5s}
+  .photo:hover img{transform:scale(1.04)}
+  .photo .brand{position:absolute;top:16px;left:16px;z-index:3;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+  .photo .brand .m{background:#fff;color:var(--navy)}
+  .photo .price{position:absolute;top:15px;right:15px;z-index:3;backdrop-filter:blur(6px)}
+  .photo .tag{position:absolute;top:52px;right:15px;z-index:3}
+  .photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,26,51,.35) 0%,transparent 26%,transparent 52%,rgba(16,26,51,.8))}
+  .photo .ov{position:absolute;left:17px;right:17px;bottom:16px;color:#fff;z-index:3}
+  .photo .ov .ey{opacity:.92;margin-bottom:5px}
+  .photo .ov .mdl{font-family:var(--disp);font-weight:700;font-size:27px;line-height:1;letter-spacing:-.02em}
+  .photo .ov .ey{font-size:11.5px}
+
+  /* HERO (fade shora, nadpis nahoře, cena dole) */
+  .hero::after{background:linear-gradient(180deg,rgba(16,26,51,.9) 4%,rgba(27,44,80,.4) 46%,transparent 80%)}
+  .hero .in{position:absolute;inset:0;padding:var(--pad);display:flex;flex-direction:column;justify-content:flex-start;z-index:3;color:#fff}
+  .hero .caps{font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:33px;line-height:.98;margin-top:16px}
+  .hero .sub{font-weight:600;font-size:15.5px;text-shadow:0 1px 12px rgba(16,26,51,.7);margin-top:auto}
+
+  /* velká čísla */
+  .num{font-family:var(--disp);font-weight:700;letter-spacing:-.04em}
+
+  /* ---- KOMPONENTY (v systému) ---- */
+  .stars{display:flex;gap:4px}
+  .stars svg{width:18px;height:18px;fill:var(--blue)}
+  .qt{font-family:var(--disp);font-style:normal;font-weight:400;font-size:23px;line-height:1.24;letter-spacing:-.01em;text-wrap:balance}
+  .byline{display:flex;align-items:center;gap:10px}
+  .byline .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue-2),var(--navy));color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px}
+  .byline b{font-size:13px;display:block}.byline span{font-size:11.5px;color:var(--muted)}
+
+  .specs{display:flex;flex-direction:column;gap:2px}
+  .specs .r{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--line-2)}
+  .specs .r:last-child{border-bottom:0}.specs .r span{color:var(--muted)}.specs .r b{font-weight:700}
+
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{position:relative;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:13px;font-weight:600;overflow:hidden}
+  .opt i{position:absolute;left:0;top:0;bottom:0;background:rgba(26,46,230,.1);z-index:0}
+  .opt span{position:relative;z-index:1;display:flex;justify-content:space-between}
+
+  .dots{display:flex;gap:5px}.dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}.dots i.on{background:var(--blue);width:18px;border-radius:4px}
+
+  .cmp{display:flex;align-items:center;gap:12px}
+  .cmp .box{flex:1;text-align:center;border:1px solid rgba(255,255,255,.22);border-radius:var(--r);padding:14px 8px}
+  .cmp .box.win{background:var(--blue);border-color:var(--blue)}
+  .cmp .box .ey{color:rgba(255,255,255,.72)}
+  .cmp .box b{font-family:var(--disp);font-weight:700;font-size:19px;display:block;margin-top:4px}
+  .cmp .arw svg{width:24px;height:24px;stroke-width:2.4;fill:none;stroke:var(--blue-2)}
+
+  .mapdot{position:absolute;width:15px;height:15px;border-radius:50% 50% 50% 0;background:var(--blue);transform:rotate(-45deg);z-index:0}
+
+  .ph{border:2px dashed var(--slate);align-items:center;justify-content:center;text-align:center;background:var(--chip)}
+  .ph .cam{width:50px;height:50px;border-radius:13px;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;color:var(--blue)}
+  .ph .cam svg{width:24px;height:24px;stroke-width:1.7;fill:none;stroke:currentColor}
+  .ph .t{font-size:14px;color:var(--ink);font-weight:700;line-height:1.15}
+  .ph .d{font-size:11.5px;color:var(--muted);line-height:1.35;max-width:200px}
+
+  /* ---- dekorativní prvky (dle reference) ---- */
+  .ring{position:absolute;border:1.5px solid rgba(255,255,255,.26);border-radius:50%;z-index:0;pointer-events:none}
+  .bars{display:flex;align-items:flex-end;gap:4px;height:22px;margin:12px 0 4px}
+  .bars i{flex:1;border-radius:2px;background:var(--line);height:40%}
+  .bars i.on{background:var(--blue)}
+  .wm{position:absolute;left:-4px;bottom:-16px;font-family:var(--disp);font-weight:700;font-size:80px;letter-spacing:-.03em;color:transparent;-webkit-text-stroke:1.5px var(--line);z-index:0;text-transform:uppercase;line-height:1;pointer-events:none}
+  .glist{display:flex;flex-direction:column}
+  .glist .gi{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.16);font-size:14.5px;font-weight:600}
+  .glist .gi .n{font-size:10.5px;font-weight:800;color:var(--blue-2);min-width:17px}
+  .score{display:flex;align-items:center;gap:12px}
+  .score .n{font-family:var(--disp);font-weight:700;font-size:72px;line-height:.78;letter-spacing:-.04em}
+  .score .st{display:flex;gap:3px}.score .st svg{width:16px;height:16px;fill:var(--blue)}
+  .badge-c{width:126px;height:126px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.45);display:grid;place-items:center;text-align:center;margin:0 auto}
+  .badge-c b{font-family:var(--disp);font-weight:700;font-size:52px;line-height:.75;letter-spacing:-.03em;display:block}
+  .badge-c span{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;font-weight:700}
+  .steps{display:flex;flex-direction:column;gap:12px}
+  .step{display:flex;gap:12px;align-items:center;font-size:15.5px;font-weight:600}
+  .step .c{width:27px;height:27px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
+  .diag{padding:0;display:block;position:relative;background:#fff;color:var(--ink)}
+  .diag .dtop{background:linear-gradient(150deg,var(--blue-2),var(--blue));color:#fff;padding:24px;height:56%;clip-path:polygon(0 0,100% 0,100% 66%,0 100%)}
+  .diag .dbot{position:absolute;left:0;right:0;bottom:24px;padding:0 24px}
+
+  .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:24px;letter-spacing:.04em}
+  @media(max-width:760px){
+    .prof{flex-direction:column;text-align:center;gap:20px;padding:26px 20px}
+    .avatar{width:110px;height:110px}.avatar b{font-size:34px}
+    .stats{justify-content:center;gap:24px}.bio{margin:0 auto}.highs{overflow-x:auto;padding:6px 20px 26px}
+    .post{padding:min(4.4vw,24px);gap:2vw}
+    .head{font-size:min(8vw,33px)}.head.lg{font-size:min(16vw,70px)}
+    .photo .ov .mdl,.hero .caps{font-size:min(6vw,29px)}.qt,.head{text-wrap:balance}
+    .tabs{gap:34px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="sheet">
+      <!-- PROFIL -->
+      <div class="prof">
+        <div class="avatar"><b>A</b></div>
+        <div class="pinfo">
+          <div class="prow"><div class="handle"><b>autobond.cz</b></div><button class="followbtn">Sledovat</button><button class="msgbtn">Zpráva</button></div>
+          <div class="stats"><div><b>1 248</b> příspěvků</div><div><b>36,4 tis.</b> sledujících</div><div><b>128</b> sledovaných</div></div>
+          <div class="bio"><div class="name">Autobond — zánovní vozy s jistotou</div><span class="ac">Bezkonkurenční nabídka v ČR.</span><br>600+ aut skladem · Toyota · KIA · MG · BAIC · výkup i protiúčet online<br><a href="https://www.autobond.cz/">www.autobond.cz</a></div>
+        </div>
+      </div>
+      <div class="highs">
+        <div class="high"><div class="ring"><svg viewBox="0 0 24 24"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13v6h-2v-2H7v2H5z"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg></div><span>Skladem</span></div>
+        <div class="high"><div class="ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div><span>Záruka</span></div>
+        <div class="high"><div class="ring"><svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg></div><span>Výkup</span></div>
+        <div class="high"><div class="ring"><svg viewBox="0 0 24 24"><path d="M3 10h18M7 15h4"/><rect x="3" y="6" width="18" height="12" rx="2"/></svg></div><span>Financování</span></div>
+        <div class="high"><div class="ring"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div><span>EV</span></div>
+        <div class="high"><div class="ring"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div><span>Recenze</span></div>
+      </div>
+      <div class="tabs">
+        <div class="tab on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Příspěvky</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="m4 4 16 8-16 8z"/></svg>Reels</div>
+        <div class="tab"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>Označené</div>
+      </div>
+
+      <!-- ============ FEED ============ -->
+      <div class="grid">
+
+        <!-- 1 · COVER -->
+        <div class="post t-navy">
+          <div class="ring" style="width:82%;height:82%;right:-26%;top:-22%"></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond · od 1994</div></div>
+          <div class="head">Zánovní vozy,<br><span class="ac">nové jistoty.</span></div>
+          <div class="pill light" style="letter-spacing:.08em">Prověřeno · CEBIA</div>
+        </div>
+
+        <!-- 2 · HERO foto -->
+        <div class="post photo hero">
+          <img src="images/chr-white-front.jpeg" alt="C-HR"/>
+          <div class="in">
+            <div class="brand"><span class="m">A</span>Autobond</div>
+            <div class="caps">Bezkonkurenční<br>nabídka v ČR</div>
+            <div class="sub">Toyota C-HR již od 565 000 Kč</div>
+          </div>
+        </div>
+
+        <!-- 3 · FOTO + cena -->
+        <div class="post photo">
+          <div class="brand"><span class="m">A</span>Autobond</div>
+          <div class="price">od 565 000</div>
+          <img src="images/chr-black-rear.jpeg" alt="Toyota C-HR"/>
+          <div class="ov"><div class="ey">Skladem · Plug-in Hybrid</div><div class="mdl">Toyota C-HR</div></div>
+        </div>
+
+        <!-- 4 · HODNOTA -->
+        <div class="post t-light" style="justify-content:flex-start;gap:16px"><div class="lines"></div><div class="wm">Jistota</div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div></div>
+          <div class="head">Prověřený původ.<br><span class="ac">Bez rizika.</span></div>
+          <div class="ey b">01 — Jistota</div>
+        </div>
+
+        <!-- 5 · STAT -->
+        <div class="post t-light"><div class="lines"></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Skladem</div></div>
+          <div><div class="head num lg">600+</div><div class="bars"><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i></div><div class="ey" style="margin-top:2px">vozů ihned k odběru</div></div>
+          <div class="pill solid">Vyber si vůz <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+        </div>
+
+        <!-- 6 · FOTO -->
+        <div class="post photo">
+          <div class="brand"><span class="m">A</span>Autobond</div>
+          <div class="price">od 599 900</div>
+          <img src="images/mg-mg4-urban-premium-ev-54kwh-118kw-1at-4x2.jpeg" alt="MG4 EV"/>
+          <div class="ov"><div class="ey">Elektro · 100 % EV</div><div class="mdl">MG4 Electric</div></div>
+        </div>
+
+        <!-- 7 · AKCE -->
+        <div class="post t-blue"><span class="cm tr"></span><span class="cm bl"></span>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Tento týden</div></div>
+          <div class="head num lg">−70<span style="font-size:.4em"> tis.</span></div>
+          <div class="ey">na vybrané vozy skladem</div>
+        </div>
+
+        <!-- 8 · RECENZE (skóre) -->
+        <div class="post t-light">
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Recenze zákazníků</div></div>
+          <div class="score"><div class="n">4,9</div><div class="st">
+            <svg viewBox="0 0 24 24"><path d="M12 2l1.9 6.1c.3.9 1 1.6 1.9 1.9L22 12l-6.2 1.9c-.9.3-1.6 1-1.9 1.9L12 22l-1.9-6.2c-.3-.9-1-1.6-1.9-1.9L2 12l6.2-1.9c.9-.3 1.6-1 1.9-1.9z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2l1.9 6.1c.3.9 1 1.6 1.9 1.9L22 12l-6.2 1.9c-.9.3-1.6 1-1.9 1.9L12 22l-1.9-6.2c-.3-.9-1-1.6-1.9-1.9L2 12l6.2-1.9c.9-.3 1.6-1 1.9-1.9z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2l1.9 6.1c.3.9 1 1.6 1.9 1.9L22 12l-6.2 1.9c-.9.3-1.6 1-1.9 1.9L12 22l-1.9-6.2c-.3-.9-1-1.6-1.9-1.9L2 12l6.2-1.9c.9-.3 1.6-1 1.9-1.9z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2l1.9 6.1c.3.9 1 1.6 1.9 1.9L22 12l-6.2 1.9c-.9.3-1.6 1-1.9 1.9L12 22l-1.9-6.2c-.3-.9-1-1.6-1.9-1.9L2 12l6.2-1.9c.9-.3 1.6-1 1.9-1.9z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2l1.9 6.1c.3.9 1 1.6 1.9 1.9L22 12l-6.2 1.9c-.9.3-1.6 1-1.9 1.9L12 22l-1.9-6.2c-.3-.9-1-1.6-1.9-1.9L2 12l6.2-1.9c.9-.3 1.6-1 1.9-1.9z"/></svg>
+          </div></div>
+          <div class="qt" style="font-size:21px">„Přebrali jsme vůz za 30 minut. Vše sedělo na korunu."</div>
+          <div class="ey b">Z 2 800+ hodnocení</div>
+        </div>
+
+        <!-- 9 · SPEC -->
+        <div class="post t-light" style="flex-direction:column;padding:0;gap:0">
+          <div style="position:relative;height:54%;overflow:hidden">
+            <div class="brand" style="position:absolute;top:16px;left:16px;z-index:3;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)"><span class="m" style="background:#fff;color:var(--navy)">A</span>Autobond</div>
+            <img src="images/chr-white-side.jpeg" alt="Toyota C-HR" style="width:100%;height:100%;object-fit:cover"/>
+            <div class="price" style="position:absolute;bottom:10px;left:12px;background:var(--blue);color:#fff">565 000 Kč</div>
+          </div>
+          <div style="flex:1;padding:14px 18px;display:flex;flex-direction:column;justify-content:center;background:#fff">
+            <b class="disp" style="font-weight:700;font-size:17px;margin-bottom:8px">Toyota C-HR 1.8 HEV</b>
+            <div class="specs"><div class="r"><span>Palivo</span><b>Plug-in Hybrid</b></div><div class="r"><span>Nájezd</span><b>24 800 km</b></div><div class="r"><span>Rok</span><b>2024</b></div></div>
+          </div>
+        </div>
+
+        <!-- 10 · ANKETA -->
+        <div class="post t-light">
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Anketa</div></div>
+          <div class="head" style="font-size:25px">Co bude vaše další auto?</div>
+          <div class="opts"><div class="opt"><i style="width:52%"></i><span>Hybrid <b>52 %</b></span></div><div class="opt"><i style="width:31%"></i><span>Elektro <b>31 %</b></span></div><div class="opt"><i style="width:17%"></i><span>Benzín <b>17 %</b></span></div></div>
+        </div>
+
+        <!-- 11 · PRŮVODCE (seznam 01–05) -->
+        <div class="post t-navy">
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Průvodce · ulož si</div></div>
+          <div class="head">Jak poznat dobré<br><span class="ac">zánovní auto.</span></div>
+          <div class="glist">
+            <div class="gi"><span class="n">01</span>Servisní historie</div>
+            <div class="gi"><span class="n">02</span>Původ vozu</div>
+            <div class="gi"><span class="n">03</span>Reálný nájezd</div>
+            <div class="gi"><span class="n">04</span>Stav laku a podvozku</div>
+            <div class="gi"><span class="n">05</span>Cena a záruka</div>
+          </div>
+        </div>
+
+        <!-- 12 · FOTO -->
+        <div class="post photo">
+          <div class="brand"><span class="m">A</span>Autobond</div>
+          <div class="price">od 649 900</div>
+          <img src="images/kia-k4-gold.jpeg" alt="KIA K4"/>
+          <div class="ov"><div class="ey">Novinka · Sedan</div><div class="mdl">KIA K4</div></div>
+        </div>
+
+        <!-- 13 · VÝKUP (kroky) -->
+        <div class="post t-light" style="justify-content:flex-start;gap:16px"><div class="wm">Výkup</div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey b">Nová služba</div></div>
+          <div class="head">Výkup vozu<br><span class="ac">online.</span></div>
+          <div class="steps">
+            <div class="step"><span class="c">1</span>Zadáš vůz a fotky</div>
+            <div class="step"><span class="c">2</span>Nacenění za 2 minuty</div>
+            <div class="step"><span class="c">3</span>Peníze ihned na účet</div>
+          </div>
+        </div>
+
+        <!-- 14 · MAPA (8 poboček) -->
+        <div class="post" style="padding:0;overflow:hidden;position:relative;background:linear-gradient(180deg,#e9eff9,#dce5f4)">
+          <div style="position:absolute;inset:0;opacity:.6;background-image:linear-gradient(#d4ddef 1px,transparent 1px),linear-gradient(90deg,#d4ddef 1px,transparent 1px);background-size:30px 30px"></div>
+          <div style="position:absolute;left:-6%;right:-6%;top:42%;height:7px;background:#c6d2ea;transform:rotate(-6deg)"></div>
+          <div style="position:absolute;top:-6%;bottom:-6%;left:37%;width:7px;background:#c6d2ea;transform:rotate(8deg)"></div>
+          <div style="position:absolute;left:8%;right:18%;top:66%;height:6px;background:#c6d2ea;transform:rotate(4deg)"></div>
+          <span class="mapdot" style="left:20%;top:26%;z-index:2"></span>
+          <span class="mapdot" style="left:44%;top:20%;z-index:2"></span>
+          <span class="mapdot" style="left:67%;top:32%;z-index:2"></span>
+          <span class="mapdot" style="left:30%;top:44%;z-index:2"></span>
+          <span class="mapdot" style="left:58%;top:50%;z-index:2"></span>
+          <span class="mapdot" style="left:76%;top:58%;z-index:2"></span>
+          <span class="mapdot" style="left:41%;top:60%;z-index:2"></span>
+          <span class="mapdot" style="left:53%;top:70%;z-index:2"></span>
+          <div style="position:absolute;top:24px;left:24px;z-index:4"><div class="brand" style="color:var(--navy)"><span class="m" style="background:var(--navy);color:#fff">A</span>Autobond</div></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:46px 24px 24px;background:linear-gradient(180deg,transparent,#eef2fb 55%);z-index:4">
+            <div class="head" style="font-size:34px">8 poboček<br><span class="ac">po celé ČR</span></div>
+            <div class="ey b" style="margin-top:6px">Praha · Brno · Ostrava · Plzeň · +4</div>
+          </div>
+        </div>
+
+        <!-- 15 · FINANCOVÁNÍ (diagonála) -->
+        <div class="post diag">
+          <div class="dtop">
+            <div class="brand"><span class="m" style="background:#fff;color:var(--navy)">A</span>Autobond</div>
+            <div class="ey" style="color:rgba(255,255,255,.85);margin-top:16px">Financování na míru</div>
+            <div style="font-size:14.5px;font-weight:600;margin-top:4px">Schválení do 15 minut, přímo na prodejně.</div>
+          </div>
+          <div class="dbot">
+            <div class="head">od 4 290<br><span class="ac">Kč/měs.</span></div>
+            <div class="ey b" style="margin-top:8px">Odjeď dnes</div>
+          </div>
+        </div>
+
+        <!-- 16 · V ČÍSLECH (odznak) -->
+        <div class="post t-navy">
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">V číslech</div></div>
+          <div class="badge-c"><div><b>30</b><span>let na trhu</span></div></div>
+          <div class="ey" style="text-align:center">30 000+ spokojených řidičů</div>
+        </div>
+
+        <!-- 17 · NOVINKA (KIA EV řada) -->
+        <div class="post photo">
+          <div class="brand"><span class="m">A</span>Autobond</div>
+          <div class="tag" style="top:15px">Právě naskladněno</div>
+          <img src="images/kia-ev-lineup.jpeg" alt="KIA EV řada"/>
+          <div class="ov"><div class="ey">Elektrická řada · skladem</div><div class="mdl">KIA EV3 · EV5 · EV9</div></div>
+        </div>
+
+        <!-- 18 · PLACEHOLDER (foto na doplnění) -->
+        <div class="post t-light ph">
+          <div class="cam"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
+          <div class="tag" style="background:rgba(26,46,230,.1);color:var(--blue)">Pošli foto</div>
+          <div class="t">Showroom / prodejna</div>
+          <div class="d">Interiér showroomu s vozy — pro hero a brand posty</div>
+        </div>
+
+      </div>
+    </div>
+    <div class="foot">Autobond · Instagram feed — jednotný brand systém · Titillium Web</div>
+  </div>
+</body>
+</html>
