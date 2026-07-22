@@ -1931,6 +1931,9 @@ document.addEventListener("click",e=>{
     let img=tile.querySelector("img.prev"); if(!img){img=document.createElement("img");img.className="prev";tile.insertBefore(img,tile.firstChild);}
     img.src=dataURL; tile.classList.add("filled"); filled.add(i);
   }
+  /* výchozí fotky vozu – načtou se ze složky images/ (fungují lokálně přes file:// i na webu, pro každého) */
+  const DEFAULTS={0:"images/chr-white-front.jpeg",1:"images/chr-black-rear.jpeg",2:"images/chr-white-side.jpeg",3:"images/toyota-c-hr-1-8-hev-limited-edition.jpeg"};
+  Object.keys(DEFAULTS).forEach(k=>{ if(!(k in store)) setPreview(+k,DEFAULTS[k]); });
   Object.keys(store).forEach(k=>setPreview(+k,store[k]));
   countEl.textContent=filled.size;
   grid.addEventListener("change",e=>{
