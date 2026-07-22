@@ -13,7 +13,7 @@
     --paper:#ffffff; --ink:#0c1220; --muted:#6b7180; --line:#e7e9f0; --line-2:#eef0f5; --chip:#f4f5f9;
     --blue:#1a2ee6; --blue-2:#3a5bff; --navy:#1b2c50; --navy-d:#101a33; --slate:#c2c8dc; --gold:#e9b949;
     --r:12px;            /* jednotné zaoblení prvků */
-    --pad:24px;          /* jednotný vnitřní okraj postu */
+    --pad:18px;          /* jednotný vnitřní okraj postu – stejný odstup na VŠECH postech */
     --disp:"Titillium Web",system-ui,sans-serif; --font:"Titillium Web",system-ui,-apple-system,sans-serif; --serif:"Instrument Serif",Georgia,serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -51,8 +51,9 @@
   .post>*{position:relative;z-index:1}
 
   /* BRAND značka — na KAŽDÉM postu, jednotná */
-  .brand{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+  .brand{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;white-space:nowrap}
   .brand .m{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-family:var(--disp);font-weight:900;font-size:14px;letter-spacing:0;flex:none}
+  .brand .yr{font-size:.82em;font-weight:600;letter-spacing:.1em;opacity:.6}
   .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
   /* corner-marky (signatura apky) */
   .cm{position:absolute;width:16px;height:16px;z-index:2}
@@ -93,12 +94,12 @@
   .photo{padding:0;display:block}
   .photo img{width:100%;height:100%;object-fit:cover;transition:.5s}
   .photo:hover img{transform:scale(1.04)}
-  .photo .brand{position:absolute;top:16px;left:16px;z-index:3;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+  .photo .brand{position:absolute;top:var(--pad);left:var(--pad);z-index:3;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)}
   .photo .brand .m{background:#fff;color:var(--navy)}
-  .photo .price{position:absolute;top:15px;right:15px;z-index:3;backdrop-filter:blur(6px)}
-  .photo .tag{position:absolute;top:52px;right:15px;z-index:3}
+  .photo .price{position:absolute;top:var(--pad);right:var(--pad);z-index:3;backdrop-filter:blur(6px)}
+  .photo .tag{position:absolute;top:calc(var(--pad) + 37px);right:var(--pad);z-index:3}
   .photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,26,51,.35) 0%,transparent 26%,transparent 52%,rgba(16,26,51,.8))}
-  .photo .ov{position:absolute;left:17px;right:17px;bottom:16px;color:#fff;z-index:3}
+  .photo .ov{position:absolute;left:var(--pad);right:var(--pad);bottom:var(--pad);color:#fff;z-index:3}
   .photo .ov .ey{opacity:.92;margin-bottom:5px}
   .photo .ov .mdl{font-family:var(--disp);font-weight:700;font-size:27px;line-height:1;letter-spacing:-.02em}
   .photo .ov .ey{font-size:11.5px}
@@ -165,15 +166,15 @@
   .step{display:flex;gap:12px;align-items:center;font-size:15.5px;font-weight:600}
   .step .c{width:27px;height:27px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
   .diag{padding:0;display:block;position:relative;background:#fff;color:var(--ink)}
-  .diag .dtop{background:linear-gradient(150deg,var(--blue-2),var(--blue));color:#fff;padding:24px;height:56%;clip-path:polygon(0 0,100% 0,100% 66%,0 100%)}
-  .diag .dbot{position:absolute;left:0;right:0;bottom:24px;padding:0 24px}
+  .diag .dtop{background:linear-gradient(150deg,var(--blue-2),var(--blue));color:#fff;padding:var(--pad);height:56%;clip-path:polygon(0 0,100% 0,100% 66%,0 100%)}
+  .diag .dbot{position:absolute;left:0;right:0;bottom:var(--pad);padding:0 var(--pad)}
 
   .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:24px;letter-spacing:.04em}
   @media(max-width:760px){
     .prof{flex-direction:column;text-align:center;gap:20px;padding:26px 20px}
     .avatar{width:110px;height:110px}.avatar b{font-size:34px}
     .stats{justify-content:center;gap:24px}.bio{margin:0 auto}.highs{overflow-x:auto;padding:6px 20px 26px}
-    .post{padding:min(4.4vw,24px);gap:2vw}
+    .post{padding:min(4.4vw,18px);gap:2vw}
     .head{font-size:min(8vw,33px)}.head.lg{font-size:min(16vw,70px)}
     .photo .ov .mdl,.hero .caps{font-size:min(6vw,29px)}.qt,.head{text-wrap:balance}
     .tabs{gap:34px}
@@ -212,7 +213,7 @@
         <!-- 1 · COVER -->
         <div class="post t-navy">
           <div class="ring" style="width:82%;height:82%;right:-26%;top:-22%"></div>
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond · od 1994</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div></div>
           <div class="head">Zánovní vozy,<br><span class="ac">nové jistoty.</span></div>
           <div class="pill light" style="letter-spacing:.08em">Prověřeno · CEBIA</div>
         </div>
@@ -221,7 +222,7 @@
         <div class="post photo hero">
           <img src="images/chr-white-front.jpeg" alt="C-HR"/>
           <div class="in">
-            <div class="brand"><span class="m">A</span>Autobond</div>
+            <div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div>
             <div class="caps">Bezkonkurenční<br>nabídka v ČR</div>
             <div class="sub">Toyota C-HR již od 565 000 Kč</div>
           </div>
@@ -229,7 +230,7 @@
 
         <!-- 3 · FOTO + cena -->
         <div class="post photo">
-          <div class="brand"><span class="m">A</span>Autobond</div>
+          <div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div>
           <div class="price">od 565 000</div>
           <img src="images/chr-black-rear.jpeg" alt="Toyota C-HR"/>
           <div class="ov"><div class="ey">Skladem · Plug-in Hybrid</div><div class="mdl">Toyota C-HR</div></div>
@@ -237,21 +238,21 @@
 
         <!-- 4 · HODNOTA -->
         <div class="post t-light" style="justify-content:flex-start;gap:16px"><div class="lines"></div><div class="wm">Jistota</div>
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div></div>
           <div class="head">Prověřený původ.<br><span class="ac">Bez rizika.</span></div>
           <div class="ey b">01 — Jistota</div>
         </div>
 
         <!-- 5 · STAT -->
         <div class="post t-light"><div class="lines"></div>
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Skladem</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div><div class="ey">Skladem</div></div>
           <div><div class="head num lg">600+</div><div class="bars"><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i></div><div class="ey" style="margin-top:2px">vozů ihned k odběru</div></div>
           <div class="pill solid">Vyber si vůz <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
         </div>
 
         <!-- 6 · FOTO -->
         <div class="post photo">
-          <div class="brand"><span class="m">A</span>Autobond</div>
+          <div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div>
           <div class="price">od 599 900</div>
           <img src="images/mg-mg4-urban-premium-ev-54kwh-118kw-1at-4x2.jpeg" alt="MG4 EV"/>
           <div class="ov"><div class="ey">Elektro · 100 % EV</div><div class="mdl">MG4 Electric</div></div>
@@ -259,14 +260,14 @@
 
         <!-- 7 · AKCE -->
         <div class="post t-blue"><span class="cm tr"></span><span class="cm bl"></span>
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Tento týden</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div><div class="ey">Tento týden</div></div>
           <div class="head num lg">−70<span style="font-size:.4em"> tis.</span></div>
           <div class="ey">na vybrané vozy skladem</div>
         </div>
 
         <!-- 8 · RECENZE (skóre) -->
         <div class="post t-light">
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Recenze zákazníků</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div><div class="ey">Recenze zákazníků</div></div>
           <div class="score"><div class="n">4,9</div><div class="st">
             <svg viewBox="0 0 24 24"><path d="M12 2l1.9 6.1c.3.9 1 1.6 1.9 1.9L22 12l-6.2 1.9c-.9.3-1.6 1-1.9 1.9L12 22l-1.9-6.2c-.3-.9-1-1.6-1.9-1.9L2 12l6.2-1.9c.9-.3 1.6-1 1.9-1.9z"/></svg>
             <svg viewBox="0 0 24 24"><path d="M12 2l1.9 6.1c.3.9 1 1.6 1.9 1.9L22 12l-6.2 1.9c-.9.3-1.6 1-1.9 1.9L12 22l-1.9-6.2c-.3-.9-1-1.6-1.9-1.9L2 12l6.2-1.9c.9-.3 1.6-1 1.9-1.9z"/></svg>
@@ -281,9 +282,9 @@
         <!-- 9 · SPEC -->
         <div class="post t-light" style="flex-direction:column;padding:0;gap:0">
           <div style="position:relative;height:54%;overflow:hidden">
-            <div class="brand" style="position:absolute;top:16px;left:16px;z-index:3;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)"><span class="m" style="background:#fff;color:var(--navy)">A</span>Autobond</div>
+            <div class="brand" style="position:absolute;top:18px;left:18px;z-index:3;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45)"><span class="m" style="background:#fff;color:var(--navy)">A</span>Autobond<span class="yr"> · od 1994</span></div>
             <img src="images/chr-white-side.jpeg" alt="Toyota C-HR" style="width:100%;height:100%;object-fit:cover"/>
-            <div class="price" style="position:absolute;bottom:10px;left:12px;background:var(--blue);color:#fff">565 000 Kč</div>
+            <div class="price" style="position:absolute;bottom:18px;left:18px;background:var(--blue);color:#fff">565 000 Kč</div>
           </div>
           <div style="flex:1;padding:14px 18px;display:flex;flex-direction:column;justify-content:center;background:#fff">
             <b class="disp" style="font-weight:700;font-size:17px;margin-bottom:8px">Toyota C-HR 1.8 HEV</b>
@@ -293,14 +294,14 @@
 
         <!-- 10 · ANKETA -->
         <div class="post t-light">
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Anketa</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div><div class="ey">Anketa</div></div>
           <div class="head" style="font-size:25px">Co bude vaše další auto?</div>
           <div class="opts"><div class="opt"><i style="width:52%"></i><span>Hybrid <b>52 %</b></span></div><div class="opt"><i style="width:31%"></i><span>Elektro <b>31 %</b></span></div><div class="opt"><i style="width:17%"></i><span>Benzín <b>17 %</b></span></div></div>
         </div>
 
         <!-- 11 · PRŮVODCE (seznam 01–05) -->
         <div class="post t-navy">
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">Průvodce · ulož si</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div><div class="ey">Průvodce · ulož si</div></div>
           <div class="head">Jak poznat dobré<br><span class="ac">zánovní auto.</span></div>
           <div class="glist">
             <div class="gi"><span class="n">01</span>Servisní historie</div>
@@ -313,7 +314,7 @@
 
         <!-- 12 · FOTO -->
         <div class="post photo">
-          <div class="brand"><span class="m">A</span>Autobond</div>
+          <div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div>
           <div class="price">od 649 900</div>
           <img src="images/kia-k4-gold.jpeg" alt="KIA K4"/>
           <div class="ov"><div class="ey">Novinka · Sedan</div><div class="mdl">KIA K4</div></div>
@@ -321,7 +322,7 @@
 
         <!-- 13 · VÝKUP (kroky) -->
         <div class="post t-light" style="justify-content:flex-start;gap:16px"><div class="wm">Výkup</div>
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey b">Nová služba</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div><div class="ey b">Nová služba</div></div>
           <div class="head">Výkup vozu<br><span class="ac">online.</span></div>
           <div class="steps">
             <div class="step"><span class="c">1</span>Zadáš vůz a fotky</div>
@@ -344,8 +345,8 @@
           <span class="mapdot" style="left:76%;top:58%;z-index:2"></span>
           <span class="mapdot" style="left:41%;top:60%;z-index:2"></span>
           <span class="mapdot" style="left:53%;top:70%;z-index:2"></span>
-          <div style="position:absolute;top:24px;left:24px;z-index:4"><div class="brand" style="color:var(--navy)"><span class="m" style="background:var(--navy);color:#fff">A</span>Autobond</div></div>
-          <div style="position:absolute;left:0;right:0;bottom:0;padding:46px 24px 24px;background:linear-gradient(180deg,transparent,#eef2fb 55%);z-index:4">
+          <div style="position:absolute;top:18px;left:18px;z-index:4"><div class="brand" style="color:var(--navy)"><span class="m" style="background:var(--navy);color:#fff">A</span>Autobond<span class="yr"> · od 1994</span></div></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:46px 18px 18px;background:linear-gradient(180deg,transparent,#eef2fb 55%);z-index:4">
             <div class="head" style="font-size:34px">8 poboček<br><span class="ac">po celé ČR</span></div>
             <div class="ey b" style="margin-top:6px">Praha · Brno · Ostrava · Plzeň · +4</div>
           </div>
@@ -354,7 +355,7 @@
         <!-- 15 · FINANCOVÁNÍ (diagonála) -->
         <div class="post diag">
           <div class="dtop">
-            <div class="brand"><span class="m" style="background:#fff;color:var(--navy)">A</span>Autobond</div>
+            <div class="brand"><span class="m" style="background:#fff;color:var(--navy)">A</span>Autobond<span class="yr"> · od 1994</span></div>
             <div class="ey" style="color:rgba(255,255,255,.85);margin-top:16px">Financování na míru</div>
             <div style="font-size:14.5px;font-weight:600;margin-top:4px">Schválení do 15 minut, přímo na prodejně.</div>
           </div>
@@ -366,14 +367,14 @@
 
         <!-- 16 · V ČÍSLECH (odznak) -->
         <div class="post t-navy">
-          <div class="top"><div class="brand"><span class="m">A</span>Autobond</div><div class="ey">V číslech</div></div>
+          <div class="top"><div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div><div class="ey">V číslech</div></div>
           <div class="badge-c"><div><b>30</b><span>let na trhu</span></div></div>
           <div class="ey" style="text-align:center">30 000+ spokojených řidičů</div>
         </div>
 
         <!-- 17 · NOVINKA (KIA EV řada) -->
         <div class="post photo">
-          <div class="brand"><span class="m">A</span>Autobond</div>
+          <div class="brand"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div>
           <div class="tag" style="top:15px">Právě naskladněno</div>
           <img src="images/kia-ev-lineup.jpeg" alt="KIA EV řada"/>
           <div class="ov"><div class="ey">Elektrická řada · skladem</div><div class="mdl">KIA EV3 · EV5 · EV9</div></div>
@@ -381,6 +382,7 @@
 
         <!-- 18 · PLACEHOLDER (foto na doplnění) -->
         <div class="post t-light ph">
+          <div class="brand" style="position:absolute;top:18px;left:18px"><span class="m">A</span>Autobond<span class="yr"> · od 1994</span></div>
           <div class="cam"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></div>
           <div class="tag" style="background:rgba(26,46,230,.1);color:var(--blue)">Pošli foto</div>
           <div class="t">Showroom / prodejna</div>
