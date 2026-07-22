@@ -1921,10 +1921,22 @@ document.addEventListener("click",e=>{
       <input type="file" accept="image/*" capture="environment" style="display:none"/>
     </label>`).join("");
   const countEl=document.getElementById("shoot-count"), filled=new Set();
+  /* nahrané fotky přetrvávají v localStorage (přežijí refresh) */
+  const STORE_KEY="mg_shoot";
+  const loadStore=()=>{try{return JSON.parse(localStorage.getItem(STORE_KEY)||"{}")}catch{return{}}};
+  const saveStore=s=>{try{localStorage.setItem(STORE_KEY,JSON.stringify(s))}catch(e){}};
+  const store=loadStore();
+  function setPreview(i,dataURL){
+    const tile=grid.querySelector('.shoot-tile[data-i="'+i+'"]'); if(!tile) return;
+    let img=tile.querySelector("img.prev"); if(!img){img=document.createElement("img");img.className="prev";tile.insertBefore(img,tile.firstChild);}
+    img.src=dataURL; tile.classList.add("filled"); filled.add(i);
+  }
+  Object.keys(store).forEach(k=>setPreview(+k,store[k]));
+  countEl.textContent=filled.size;
   grid.addEventListener("change",e=>{
     const inp=e.target; if(inp.type!=="file"||!inp.files||!inp.files[0]) return;
-    const tile=inp.closest(".shoot-tile"), rd=new FileReader();
-    rd.onload=()=>{ let img=tile.querySelector("img.prev"); if(!img){img=document.createElement("img");img.className="prev";tile.insertBefore(img,tile.firstChild);} img.src=rd.result; tile.classList.add("filled"); filled.add(+tile.dataset.i); countEl.textContent=filled.size; };
+    const tile=inp.closest(".shoot-tile"), i=+tile.dataset.i, rd=new FileReader();
+    rd.onload=()=>{ setPreview(i,rd.result); countEl.textContent=filled.size; store[i]=rd.result; saveStore(store); };
     rd.readAsDataURL(inp.files[0]);
   });
   const send=document.getElementById("shoot-send"), orig=send.innerHTML;
